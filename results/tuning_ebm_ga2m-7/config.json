@@ -1,0 +1,26 @@
+{
+  "seeds": [
+    42,
+    2026,
+    5175
+  ],
+  "n_folds": 5,
+  "drop_features": [
+    "fnlwgt",
+    "education"
+  ],
+  "n_jobs": -1,
+  "model": {
+    "type": "ebm",
+    "fixed": {
+      "n_jobs": 1
+    },
+    "grid": {
+      "interactions": [
+        10
+      ]
+    }
+  },
+  "_config_path": "configs/tuning_ebm_ga2m.json",
+  "_name": "tuning_ebm_ga2m"
+}
