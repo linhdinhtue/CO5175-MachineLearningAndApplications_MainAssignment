@@ -1,0 +1,4 @@
+{
+  "duplicate_policy": "keep: Adult has no ID column, identical rows may be distinct people; counts are reported in data_meta.json",
+  "_config_path": "configs/data_check.json"
+}
