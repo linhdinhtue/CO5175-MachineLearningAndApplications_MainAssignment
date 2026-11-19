@@ -80,7 +80,8 @@ def build_setup(spec: dict, seed: int) -> dict:
         y = np.all(X[:, :rel] > 0, axis=1).astype(float)
     else:
         y = X[:, :rel] @ rng.normal(size=rel)
-    tree = DecisionTreeRegressor(max_depth=spec["max_depth"], random_state=seed).fit(X, y)
+    tree = DecisionTreeRegressor(max_depth=spec["max_depth"], random_state=seed,
+                                 **spec.get("tree_params", {})).fit(X, y)
 
     x = rng.normal(size=M)
     if spec["target"] == "and":
@@ -120,25 +121,27 @@ def run_figure3(cfg: dict, out) -> pd.DataFrame:
         infos[name] = st["info"]
         f, M, feat = st["f"], st["M"], st["feature"]
         train = np.random.default_rng(cfg["seed"]).integers(0, 2, size=(cfg["lime_train_rows"], M)).astype(float)
-        timing = {"kernel_shap": 0.0, "shapley_sampling": 0.0, "lime": 0.0}
+
+        methods = {
+            method: (lambda n, seed, l1=l1: kernel_shap(f, M, n, seed, l1)[feat])
+            for method, l1 in cfg["kernel_variants"].items()
+        }
+        # paper: sampling estimates each of the M features separately, so the budget is split M ways
+        methods["shapley_sampling"] = lambda n, seed: shapley_sampling(
+            f, M, feat, max(n // M, 2), np.random.default_rng(seed))
+        methods["shapley_sampling_single"] = lambda n, seed: shapley_sampling(
+            f, M, feat, n, np.random.default_rng(seed))
+        methods["lime"] = lambda n, seed: lime_coefs(f, M, n, seed, train)[feat]
+
+        timing = dict.fromkeys(methods, 0.0)
         for n in cfg["n_evals"]:
             for rep in range(cfg["n_reps"]):
                 seed = cfg["seed"] * 100_003 + n * 1_000 + rep
-                t0 = time.perf_counter()
-                k = kernel_shap(f, M, n, seed, cfg["kernel_l1_reg"])[feat]
-                t1 = time.perf_counter()
-                s = shapley_sampling(f, M, feat, n, np.random.default_rng(seed))
-                t2 = time.perf_counter()
-                lm = lime_coefs(f, M, n, seed, train)[feat]
-                t3 = time.perf_counter()
-                timing["kernel_shap"] += t1 - t0
-                timing["shapley_sampling"] += t2 - t1
-                timing["lime"] += t3 - t2
-                rows += [
-                    {"setup": name, "method": "kernel_shap", "n_evals": n, "rep": rep, "estimate": k},
-                    {"setup": name, "method": "shapley_sampling", "n_evals": n, "rep": rep, "estimate": s},
-                    {"setup": name, "method": "lime", "n_evals": n, "rep": rep, "estimate": lm},
-                ]
+                for method, fn in methods.items():
+                    t0 = time.perf_counter()
+                    value = fn(n, seed)
+                    timing[method] += time.perf_counter() - t0
+                    rows.append({"setup": name, "method": method, "n_evals": n, "rep": rep, "estimate": value})
         infos[name]["seconds"] = timing
         print(name, infos[name])
 
@@ -153,14 +156,21 @@ def run_figure3(cfg: dict, out) -> pd.DataFrame:
     summary.to_csv(out / "fig3_summary.csv", index=False)
     save_json(infos, out / "fig3_setups.json")
 
-    colors = {"kernel_shap": "tab:blue", "shapley_sampling": "tab:purple", "lime": "tab:green"}
-    labels = {"kernel_shap": "SHAP (Kernel)", "shapley_sampling": "Shapley sampling", "lime": "LIME"}
+    styles = {
+        "kernel_shap": ("tab:blue", "-", "SHAP (Kernel, AIC)"),
+        "kernel_shap_top10": ("tab:cyan", "--", "SHAP (Kernel, top-10)"),
+        "shapley_sampling": ("tab:purple", "-", "Shapley sampling (budget / M)"),
+        "shapley_sampling_single": ("tab:pink", "--", "Shapley sampling (1 feature)"),
+        "lime": ("tab:green", "-", "LIME"),
+    }
     fig, axes = plt.subplots(1, len(infos), figsize=(6 * len(infos), 4))
     for ax, (name, info) in zip(np.atleast_1d(axes), infos.items()):
-        for method, color in colors.items():
+        for method in summary["method"].unique():
+            color, ls, label = styles.get(method, (None, "-", method))
             s = summary[(summary.setup == name) & (summary.method == method)]
-            ax.plot(s.n_evals, s["median"], color=color, label=labels[method])
-            ax.fill_between(s.n_evals, s.p10, s.p90, color=color, alpha=0.2)
+            ax.plot(s.n_evals, s["median"], color=color, ls=ls, label=label)
+            if ls == "-":
+                ax.fill_between(s.n_evals, s.p10, s.p90, color=color, alpha=0.2)
         ax.axhline(info["true_shapley"], color="dimgray", lw=2, label="True Shapley value")
         ax.set_title(f"{name}: {len(info['used_features'])} of {info['n_features']} features used")
         ax.set_xlabel("# of function evaluations")

@@ -10,7 +10,7 @@
 | 0. Thiết lập | Hạ tầng CI xong; còn phân quyền, chọn hình thức trình bày | `.github/workflows/run-experiment.yml`, `configs/ci_runs.json` |
 | 1. Proposal | Chưa nộp; đã chốt hình paper cần tái hiện | — |
 | 2. Dữ liệu & baseline | Xong phần code/kết quả; còn EDA notebook, lý thuyết, báo cáo tiến độ | `data_check-1`, `baseline-1` |
-| 3. Thực nghiệm | Tuning, ablation, SHAP xong; tái hiện paper đang chạy; chưa làm bonus | `tuning_*-3`, `ablation-3`, `tuning_gbdt_extended-4`, `explain-4` |
+| 3. Thực nghiệm | Tuning, ablation, SHAP xong; tái hiện Figure 4 xong, Figure 3 đang chạy lần 2; chưa làm bonus | `tuning_*-3`, `ablation-3`, `tuning_gbdt_extended-4`, `explain-4`, `reproduce_shap-5` |
 | 4. Hoàn thiện | Đã điền số liệu vào docs; chưa viết báo cáo/slide | `docs/analysis_and_discussion.md` |
 
 ## Phần Thủy đã thực hiện: hướng đi, ưu điểm, nhược điểm
@@ -89,9 +89,10 @@ Toàn bộ phần code thực nghiệm, kết quả và số liệu trong docs t
 - [ ] Dependence plot cho `capital-gain` và `age` để xác nhận giả thuyết phi tuyến.
 
 ### 3.4 Tái hiện paper
-- [ ] `experiments/reproduce_shap.py`: Shapley chính xác bằng liệt kê tập con, so với KernelExplainer/TreeExplainer — **code xong (Thủy), đang chờ artifact `reproduce_shap`**.
-- [ ] Tái hiện Figure 3 (Kernel SHAP vs Shapley sampling vs LIME) và Figure 4 (ví dụ đồ chơi) — **đang chờ artifact**.
-- [ ] Điền bảng mục 6 trong docs — đã ghi locator và số đọc từ hình; còn kết quả tái hiện.
+- [x] `experiments/reproduce_shap.py`: Shapley chính xác bằng liệt kê tập con; khớp KernelExplainer (Figure 4, sai số ~1e-16) và TreeExplainer (sai số ≤ 5.5e-8). — `reproduce_shap-5` **(Thủy)**
+- [x] Figure 4: Kernel SHAP = Shapley chính xác = số của paper (1, 1, 0) và (3, 2, 0); LIME khác SHAP như paper nhưng khác cả số LIME của paper. — `reproduce_shap-5` **(Thủy)**
+- [ ] Figure 3: lần 1 (`reproduce_shap-5`) xác nhận Kernel SHAP hội tụ nhanh hơn và LIME lệch; còn 2 chênh lệch (cách tính ngân sách Shapley sampling, Kernel SHAP lệch thấp ở cây sparse) → **đang chờ lần 2 `reproduce_shap_v2`**.
+- [ ] Điền bảng mục 6 trong docs — đã ghi locator, số đọc từ hình và kết quả lần 1; còn kết quả lần 2.
 
 ### 3.5 Mở rộng / bonus (chọn ít nhất một)
 - [ ] EBM (`interpret`) như mô hình glass-box thứ hai; so với Logistic và GBDT.

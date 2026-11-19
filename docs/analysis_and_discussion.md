@@ -205,8 +205,38 @@ Ghi số hệ số + intercept của Logistic; số cây/nút/lá và giá trị
 | Hình/bảng/thí nghiệm chính trong paper | **Đã chốt** (đọc từ mã nguồn LaTeX arXiv 1705.07874v2): **Figure 3** (mục 5.1 *Computational Efficiency*) — so sánh Kernel SHAP (debiased lasso), Shapley sampling values và LIME; ước lượng attribution của một đặc trưng theo số lần gọi mô hình; 200 lần lặp mỗi cỡ mẫu, vẽ percentile 10–90. (A) cây quyết định dùng cả 10 đặc trưng; (B) cây quyết định chỉ dùng 3 trong 100 đặc trưng; mỗi trường hợp giải thích một input. Bổ sung **Figure 4** (mục 5.2): hai ví dụ đồ chơi có thể tính Shapley chính xác — sickness score (2 khi có cả sốt và ho, 5 khi chỉ có một, 0 khi không có) và chia tiền theo max (5, 4, 0 câu đúng → \$5). |
 | Dữ liệu, mô hình, cách tính attribution | Paper **không** nêu phân phối dữ liệu, độ sâu cây, background, input được giải thích hay đặc trưng được vẽ → nhóm phải tự chọn và ghi rõ là giả định. Attribution dùng giả định độc lập đặc trưng (Eq. 11 trong paper), tương ứng `interventional` trong thư viện. |
 | Số liệu công bố | Figure 3 chỉ là đồ thị → so sánh **định tính**. Đọc từ hình: giá trị Shapley thật ≈ 0.33 ở cả (A) và (B); trong khoảng 200–1 000 lần gọi mô hình, dải 10–90% của Kernel SHAP hẹp nhất, Shapley sampling rộng nhất (ở (B) trung vị nhảy giữa 0, 0.25, 0.5), LIME ổn định nhưng hội tụ về giá trị khác (≈ 0.13 ở (A), ≈ 0.17 ở (B)). Figure 4 (đọc từ hình, xấp xỉ): sickness — Human = SHAP = (1, 1, 0) cho (Fever, Cough, Congestion), LIME ≈ (−1.17, −1.17, −0.07); max profit — Human = SHAP = (3, 2, 0), LIME ≈ (1.93, 0.93, −0.03), DeepLIFT gốc = (5, 0, 0). |
-| Kết quả tái hiện, chênh lệch | Chưa chạy |
+| Kết quả tái hiện, chênh lệch | Xem bên dưới (artifact `reproduce_shap-5`) |
 | Thực nghiệm GBDT trên Adult | Ứng dụng phương pháp; không gọi là tái hiện benchmark gốc |
+
+### 6.1. Kết quả tái hiện lần 1 (artifact `reproduce_shap-5`, config `configs/reproduce_shap.json`)
+
+**Figure 4 — ví dụ đồ chơi (tham chiếu: đặc trưng vắng mặt = 0):**
+
+| Trò chơi | Đặc trưng | Shapley chính xác | Kernel SHAP | Paper: Human / SHAP | LIME (nhóm) | LIME (paper, đọc từ hình) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Sickness | Fever | 1.00 | 1.00 | 1 / 1 | 0.37 | ≈ −1.17 |
+| Sickness | Cough | 1.00 | 1.00 | 1 / 1 | 0.38 | ≈ −1.17 |
+| Sickness | Congestion | 0.00 | 0.00 | 0 / 0 | 0.01 | ≈ −0.07 |
+| Max profit | Man 1 | 3.00 | 3.00 | 3 / 3 | 2.68 | ≈ 1.93 |
+| Max profit | Man 2 | 2.00 | 2.00 | 2 / 2 | 1.69 | ≈ 0.93 |
+| Max profit | Man 3 | 0.00 | 0.00 | 0 / 0 | 0.01 | ≈ −0.03 |
+
+- **Tái hiện khớp:** Shapley chính xác và Kernel SHAP trùng hoàn toàn với SHAP và câu trả lời của người trong paper.
+- **Chênh lệch:** LIME của nhóm cũng lệch khỏi SHAP (đúng luận điểm của paper) nhưng **không trùng số LIME của paper**, thậm chí khác dấu ở ví dụ sickness. Nguyên nhân: paper không nêu cấu hình LIME (cách lấy mẫu, kernel width, dữ liệu train); nhóm dùng `LimeTabularExplainer` với đặc trưng nhị phân, lấy mẫu đều trên {0,1}, kernel mặc định. Điều này minh họa chính nhận xét của paper: kết quả LIME phụ thuộc vào lựa chọn heuristic.
+
+**Figure 3 — hiệu quả mẫu (200 lần lặp mỗi cỡ mẫu, tham chiếu đơn):**
+
+| Mô hình | Giá trị Shapley thật | Kernel SHAP @1000 (trung vị; dải 10–90%) | Shapley sampling @1000 | LIME @1000 |
+| --- | --- | --- | --- | --- |
+| Dense (10/10 đặc trưng, giải thích đặc trưng 7) | 2.090 | 2.091; 0.026 | 2.090; 0.186 | 2.805; 0.130 |
+| Sparse (AND của 3 đặc trưng, giải thích đặc trưng 0) | 0.333 | 0.315; 0.053 | 0.334; 0.052 | 0.237; 0.040 |
+
+- **Khớp với paper:** ở mô hình dense, Kernel SHAP có dải hẹp hơn Shapley sampling ~7 lần tại 1 000 lần gọi; LIME ổn định nhưng hội tụ về giá trị sai (lệch +0.7, paper lệch về phía thấp hơn). Ở mô hình sparse, LIME cũng lệch (0.24 vs 0.33, paper ≈ 0.17 vs 0.33).
+- **Kiểm tra cài đặt:** Shapley chính xác khớp TreeExplainer interventional (sai số ≤ 5.5e-8); tính cộng đúng tới 2.5e-15.
+- **Chênh lệch 1 — ngân sách Shapley sampling:** lần 1 dồn toàn bộ ngân sách cho **một** đặc trưng, trong khi paper nói Shapley sampling ước lượng **riêng từng đặc trưng** (mục 4.1), tức ngân sách chia cho M đặc trưng. Vì vậy ở mô hình sparse, sampling của nhóm hẹp hơn hẳn paper (paper: dải 0–1, trung vị nhảy 0 / 0.25 / 0.5). Lần 2 chạy cả hai cách tính.
+- **Chênh lệch 2 — Kernel SHAP lệch thấp ở mô hình sparse** (trung vị 0.29 @200 → 0.315 @1000, thật 0.333), trong khi paper cho thấy SHAP bám sát giá trị thật. Giả thuyết: chọn biến bằng AIC trên 100 đặc trưng với ít mẫu. Lần 2 thêm biến thể chọn 10 biến (`num_features(10)`).
+- **Chênh lệch 3 — cây sparse dùng 4 thay vì 3 đặc trưng** (thêm đặc trưng 61 do một split nhiễu). Không đổi giá trị thật của đặc trưng 0 (= 1/3) nhưng khác thiết lập paper; lần 2 thêm `min_impurity_decrease=0.001`.
+- **Chi phí:** Kernel SHAP chậm nhất ở mô hình 100 đặc trưng (200 s cho 1 800 lần ước lượng, so với 70 s của LIME và 8 s của sampling).
 
 Với bài toán nhỏ, có thể tính tổng Shapley bằng liệt kê tập con dưới cùng định nghĩa giá trị tập con và background, rồi đo sai số so với explainer. Đây là kiểm tra triển khai bổ sung. Chênh lệch số liệu paper chỉ có ý nghĩa khi metric và thiết lập tương thích; nếu khác dataset thì phân tích định tính và nói rõ không so trực tiếp.
 

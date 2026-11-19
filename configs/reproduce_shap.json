@@ -2,7 +2,7 @@
   "seed": 0,
   "n_evals": [200, 300, 400, 500, 600, 700, 800, 900, 1000],
   "n_reps": 200,
-  "kernel_l1_reg": "aic",
+  "kernel_variants": {"kernel_shap": "aic"},
   "lime_train_rows": 1000,
   "setups": {
     "dense": {

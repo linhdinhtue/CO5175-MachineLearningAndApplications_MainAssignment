@@ -1,5 +1,5 @@
 {
   "runs": [
-    {"task": "reproduce_shap", "config": "configs/reproduce_shap.json"}
+    {"task": "reproduce_shap", "config": "configs/reproduce_shap_v2.json"}
   ]
 }
