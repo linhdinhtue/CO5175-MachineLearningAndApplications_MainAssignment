@@ -2,6 +2,16 @@
 name: Run experiment
 
 "on":
+  # push trigger works on non-default branches, so main does not need this file
+  push:
+    branches:
+      - Thuy-branch
+    paths:
+      - "src/**"
+      - "experiments/**"
+      - "configs/**"
+      - "requirements.txt"
+      - ".github/workflows/run-experiment.yml"
   workflow_dispatch:
     inputs:
       task:
@@ -24,6 +34,11 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        # push: run all listed tasks; manual run: only the chosen task
+        task: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', inputs.task) || '["data_check", "baseline"]') }}
 
     steps:
       - uses: actions/checkout@v4
@@ -42,9 +57,9 @@ jobs:
           path: data/raw
           key: adult-raw-v1
 
-      - name: Run ${{ inputs.task }}
+      - name: Run ${{ matrix.task }}
         env:
-          TASK: ${{ inputs.task }}
+          TASK: ${{ matrix.task }}
           CONFIG: ${{ inputs.config }}
         run: |
           if [ -z "$CONFIG" ]; then
@@ -56,6 +71,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.task }}-${{ github.run_number }}
-          path: results/${{ inputs.task }}/
+          name: ${{ matrix.task }}-${{ github.run_number }}
+          path: results/${{ matrix.task }}/
           if-no-files-found: warn
