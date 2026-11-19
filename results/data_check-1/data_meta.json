@@ -1,0 +1,61 @@
+{
+  "source_url": "https://archive.ics.uci.edu/static/public/2/adult.zip",
+  "files": {
+    "adult.data": {
+      "sha256": "5b00264637dbfec36bdeaab5676b0b309ff9eb788d63554ca0a249491c86603d",
+      "bytes": 3974305
+    },
+    "adult.test": {
+      "sha256": "a2a9044bc167a35b2361efbabec64e89d69ce82d9790d2980119aac5fd7e9c05",
+      "bytes": 2003153
+    },
+    "adult.names": {
+      "sha256": "c248284c0b5de30c9e1958d6cdd168a34a654758b620e68f46aefa83fc0a576a",
+      "bytes": 5229
+    }
+  },
+  "duplicate_policy": "keep: Adult has no ID column, identical rows may be distinct people; counts are reported in data_meta.json",
+  "train": {
+    "n_rows": 32561,
+    "n_duplicates": 24,
+    "label_counts": {
+      "<=50K": 24720,
+      ">50K": 7841
+    },
+    "missing_per_column": {
+      "workclass": 1836,
+      "occupation": 1843,
+      "native-country": 583
+    }
+  },
+  "test": {
+    "n_rows": 16281,
+    "n_duplicates": 5,
+    "label_counts": {
+      "<=50K": 12435,
+      ">50K": 3846
+    },
+    "missing_per_column": {
+      "workclass": 963,
+      "occupation": 966,
+      "native-country": 274
+    }
+  },
+  "dtypes": {
+    "age": "int64",
+    "workclass": "object",
+    "fnlwgt": "int64",
+    "education": "object",
+    "education-num": "int64",
+    "marital-status": "object",
+    "occupation": "object",
+    "relationship": "object",
+    "race": "object",
+    "sex": "object",
+    "capital-gain": "int64",
+    "capital-loss": "int64",
+    "hours-per-week": "int64",
+    "native-country": "object",
+    "income": "object"
+  }
+}

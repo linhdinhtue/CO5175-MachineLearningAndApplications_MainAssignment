@@ -1,0 +1,105 @@
+{
+  "seed": 42,
+  "drop_features": [
+    "fnlwgt",
+    "education"
+  ],
+  "n_boot": 1000,
+  "n_background": 100,
+  "n_explain": 500,
+  "min_group_size": 100,
+  "group_attributes": [
+    "sex",
+    "race"
+  ],
+  "dependence_features": [
+    "age",
+    "capital-gain",
+    "education-num",
+    "hours-per-week"
+  ],
+  "symlog_features": [
+    "capital-gain"
+  ],
+  "logistic_for_dependence": "elasticnet",
+  "models": {
+    "l1": {
+      "type": "logistic",
+      "fixed": {
+        "penalty": "l1",
+        "C": 1.5199110829529332,
+        "solver": "saga",
+        "max_iter": 5000,
+        "tol": 0.0001
+      }
+    },
+    "l2": {
+      "type": "logistic",
+      "fixed": {
+        "penalty": "l2",
+        "C": 0.1873817422860383,
+        "solver": "saga",
+        "max_iter": 5000,
+        "tol": 0.0001
+      }
+    },
+    "elasticnet": {
+      "type": "logistic",
+      "fixed": {
+        "penalty": "elasticnet",
+        "C": 1.0,
+        "l1_ratio": 0.8,
+        "solver": "saga",
+        "max_iter": 5000,
+        "tol": 0.0001
+      }
+    },
+    "gbdt": {
+      "type": "gbdt",
+      "fixed": {
+        "n_estimators": 200,
+        "learning_rate": 0.1,
+        "max_depth": 4
+      }
+    },
+    "ebm": {
+      "type": "ebm",
+      "fixed": {
+        "interactions": 10,
+        "n_jobs": -1
+      }
+    }
+  },
+  "pairs": [
+    [
+      "gbdt",
+      "l1"
+    ],
+    [
+      "gbdt",
+      "l2"
+    ],
+    [
+      "gbdt",
+      "elasticnet"
+    ],
+    [
+      "ebm",
+      "l1"
+    ],
+    [
+      "ebm",
+      "l2"
+    ],
+    [
+      "ebm",
+      "elasticnet"
+    ],
+    [
+      "gbdt",
+      "ebm"
+    ]
+  ],
+  "_config_path": "configs/analysis.json",
+  "_name": "analysis"
+}
