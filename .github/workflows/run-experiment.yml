@@ -1,0 +1,57 @@
+name: Run experiment
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Module trong experiments/ (vd: data_check, baseline)"
+        required: true
+        default: data_check
+        type: choice
+        options:
+          - data_check
+          - baseline
+      config:
+        description: "Đường dẫn config (để trống = configs/<task>.json)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Cache Adult dataset
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: adult-raw-v1
+
+      - name: Run ${{ inputs.task }}
+        env:
+          TASK: ${{ inputs.task }}
+          CONFIG: ${{ inputs.config }}
+        run: |
+          if [ -z "$CONFIG" ]; then CONFIG="configs/${TASK}.json"; fi
+          python -m "experiments.${TASK}" --config "$CONFIG"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.task }}-${{ github.run_number }}
+          path: results/${{ inputs.task }}/
+          if-no-files-found: warn
