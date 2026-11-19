@@ -20,6 +20,11 @@ def build_pipeline(model_cfg: dict, X: pd.DataFrame, seed: int) -> Pipeline:
     elif kind == "gbdt":
         pre = build_preprocessor(X, scale=False, drop_first=False)
         clf = GradientBoostingClassifier(**params)
+    elif kind == "ebm":
+        from interpret.glassbox import ExplainableBoostingClassifier
+
+        # EBM bins numeric and encodes categorical/missing values itself
+        return Pipeline([("clf", ExplainableBoostingClassifier(**params))])
     else:
         raise ValueError(f"Unknown model type: {kind}")
     return Pipeline([("pre", pre), ("clf", clf)])
@@ -47,6 +52,12 @@ def complexity(pipe: Pipeline) -> dict:
             n_iter=int(clf.n_iter_.max()),
             max_iter_reached=bool(clf.n_iter_.max() >= clf.max_iter),
         )
+    elif hasattr(clf, "term_features_"):
+        info.update(
+            n_terms=len(clf.term_features_),
+            n_interaction_terms=int(sum(len(t) > 1 for t in clf.term_features_)),
+            n_term_scores=int(sum(np.asarray(s).size for s in clf.term_scores_)),
+        )
     else:
         trees = clf.estimators_.ravel()
         info.update(
@@ -58,8 +69,10 @@ def complexity(pipe: Pipeline) -> dict:
 
 
 def feature_table(pipe: Pipeline) -> pd.DataFrame:
-    names = pipe.named_steps["pre"].get_feature_names_out()
     clf = pipe.named_steps["clf"]
+    if hasattr(clf, "term_features_"):
+        return pd.DataFrame({"feature": clf.term_names_, "term_importance": clf.term_importances()})
+    names = pipe.named_steps["pre"].get_feature_names_out()
     if isinstance(clf, LogisticRegression):
         coef = clf.coef_[0]
         return pd.DataFrame({

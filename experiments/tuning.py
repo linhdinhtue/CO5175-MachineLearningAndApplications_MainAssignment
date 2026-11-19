@@ -72,7 +72,7 @@ def main() -> None:
             **complexity(model),
         })
 
-        if seed == cfg["seeds"][0]:
+        if seed == cfg["seeds"][0] and "pre" in model.named_steps:
             save_json(reference_categories(model.named_steps["pre"]), out / "reference_categories.json")
 
     test_df = pd.DataFrame(rows)

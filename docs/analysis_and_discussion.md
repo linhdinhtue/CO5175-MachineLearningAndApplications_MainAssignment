@@ -238,6 +238,26 @@ Ghi số hệ số + intercept của Logistic; số cây/nút/lá và giá trị
 - **Chênh lệch 3 — cây sparse dùng 4 thay vì 3 đặc trưng** (thêm đặc trưng 61 do một split nhiễu). Không đổi giá trị thật của đặc trưng 0 (= 1/3) nhưng khác thiết lập paper; lần 2 thêm `min_impurity_decrease=0.001`.
 - **Chi phí:** Kernel SHAP chậm nhất ở mô hình 100 đặc trưng (200 s cho 1 800 lần ước lượng, so với 70 s của LIME và 8 s của sampling).
 
+### 6.2. Kết quả tái hiện lần 2 (artifact `reproduce_shap_v2-6`, config `configs/reproduce_shap_v2.json`)
+
+Thay đổi so với lần 1: (i) Shapley sampling chia ngân sách cho M đặc trưng như paper (giữ cả cách tính cũ làm đối chứng); (ii) thêm Kernel SHAP chọn 10 biến; (iii) cây sparse thêm `min_impurity_decrease=0.001` → giờ dùng đúng 3/100 đặc trưng (độ sâu 3, 4 lá), giá trị thật của đặc trưng 0 là 0.332. Hình: `plots/figure3.png`.
+
+| Mô hình | Phương pháp | @200 trung vị (dải 10–90%) | @600 | @1000 |
+| --- | --- | --- | --- | --- |
+| Dense (thật = 2.090) | Kernel SHAP (AIC) | 2.09 (1.92–2.25) | 2.10 (2.03–2.15) | 2.09 (2.08–2.10) |
+| | Shapley sampling (ngân sách / M, như paper) | 2.02 (1.43–2.65) | 2.05 (1.74–2.41) | 2.08 (1.79–2.40) |
+| | LIME | 2.71 (2.58–2.86) | 2.79 (2.72–2.87) | 2.81 (2.74–2.87) |
+| Sparse (thật = 0.332) | Kernel SHAP (AIC) | 0.29 (0.19–0.36) | 0.31 (0.27–0.35) | 0.31 (0.29–0.34) |
+| | Shapley sampling (ngân sách / M, như paper) | 0.00 (0.00–1.00) | 0.33 (0.00–0.67) | 0.40 (0.00–0.60) |
+| | LIME | 0.22 (0.17–0.27) | 0.23 (0.21–0.26) | 0.24 (0.21–0.25) |
+
+- **Tái hiện thành công các luận điểm của Figure 3:** (1) Kernel SHAP có dải 10–90% hẹp hơn Shapley sampling ở mọi cỡ mẫu và cả hai mô hình (dense @1000: 0.03 so với 0.61; sparse @1000: 0.05 so với 0.60); (2) LIME ổn định nhưng hội tụ về giá trị khác giá trị Shapley ở cả hai mô hình.
+- **Hình dạng gần như trùng paper ở mô hình sparse:** với ngân sách chia cho M = 100 đặc trưng, mỗi đặc trưng chỉ có 1–5 hoán vị nên Shapley sampling chỉ nhận vài giá trị rời rạc; trung vị nhảy 0 → 0.5 → 0 → 0.33 → 0.25 → 0.4 và dải 0–1 thu hẹp còn 0–0.6 tại 1 000 lần gọi — giống Figure 3B của paper (dải 0–1 tại 200, 0–0.6 tại 1 000).
+- **Kết luận về chênh lệch 1:** khác biệt ở lần 1 hoàn toàn do cách tính ngân sách. Nếu dồn toàn bộ ngân sách cho một đặc trưng, sampling hẹp ngang Kernel SHAP (sparse @1000: 0.05). Ưu thế của Kernel SHAP đến từ việc ước lượng **đồng thời** mọi đặc trưng từ cùng một tập mẫu.
+- **Chênh lệch còn lại — Kernel SHAP lệch thấp ở mô hình sparse** (0.29 → 0.31 so với 0.332), giống nhau ở cả hai cách chọn biến (AIC và top-10) → không phải do bước chọn biến. Giả thuyết (chưa kiểm chứng): với M = 100, `KernelExplainer` của `shap` 0.49 ưu tiên liệt kê hết các liên minh cỡ 1 và 99 trước (200 liên minh), nên ở ngân sách nhỏ gần như không có mẫu ở các cỡ trung gian nơi tương tác AND thể hiện; paper (bản cài đặt 2017) có thể lấy mẫu khác. Dải của nhóm vẫn chứa giá trị thật từ 600 lần gọi trở lên.
+- **Khác biệt ở mô hình dense:** dải Kernel SHAP của nhóm hẹp hơn paper tại 1 000 lần gọi vì với M = 10 chỉ có 1 022 liên minh, gần như được liệt kê toàn bộ; paper không nêu M liên minh hay background nên không so trực tiếp được.
+- **Chi phí:** biến thể top-10 nhanh hơn AIC ~6 lần ở mô hình sparse (27 s so với 158 s cho 1 800 lần ước lượng) với cùng độ chính xác.
+
 Với bài toán nhỏ, có thể tính tổng Shapley bằng liệt kê tập con dưới cùng định nghĩa giá trị tập con và background, rồi đo sai số so với explainer. Đây là kiểm tra triển khai bổ sung. Chênh lệch số liệu paper chỉ có ý nghĩa khi metric và thiết lập tương thích; nếu khác dataset thì phân tích định tính và nói rõ không so trực tiếp.
 
 ## 7. Mở rộng, hạn chế và kết luận hiện tại

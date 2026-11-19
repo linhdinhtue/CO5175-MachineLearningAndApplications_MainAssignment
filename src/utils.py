@@ -33,7 +33,7 @@ def save_json(obj, path: Path) -> None:
 
 def env_info() -> dict:
     pkgs = {}
-    for name in ["numpy", "pandas", "scikit-learn", "shap", "scipy"]:
+    for name in ["numpy", "pandas", "scikit-learn", "shap", "scipy", "lime", "interpret-core"]:
         try:
             pkgs[name] = version(name)
         except PackageNotFoundError:
