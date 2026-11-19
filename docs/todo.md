@@ -55,14 +55,15 @@ Quy ước: mỗi người tự commit phần mình (giảng viên có thể xem
 ## Giai đoạn 3 — Tái hiện & thực nghiệm (tuần 4–6)
 
 ### 3.1 Tuning mô hình chính
-- [ ] **[R]** `configs/tuning_*.yaml` cho L1, L2, Elastic Net, GBDT (12 cấu hình mỗi biến thể, như README).
-- [ ] **[R]** `experiments/run_tuning.py`: `GridSearchCV` theo ROC-AUC, refit toàn train, đánh giá test; lưu `cv_results_`, tham số tốt nhất, dự đoán test, thời gian tuning/refit/inference.
-- [ ] **[R]** Ghi lại convergence warning và cấu hình lỗi (không loại âm thầm).
-- [ ] **[R]** Đếm kích thước mô hình: hệ số + intercept (Logistic); số cây/nút/lá (GBDT); dung lượng file model.
-- [ ] **[R]** `src/aggregate.py`: tổng hợp mean ± sample std qua 3 seed, chênh lệch theo cặp Δ_s.
+- [x] **[R]** `configs/tuning_*.yaml` cho L1, L2, Elastic Net, GBDT (12 cấu hình mỗi biến thể, như README).
+- [x] **[R]** `experiments/run_tuning.py`: `GridSearchCV` theo ROC-AUC, refit toàn train, đánh giá test; lưu `cv_results_`, tham số tốt nhất, dự đoán test, thời gian tuning/refit/inference.
+- [x] **[R]** Ghi lại convergence warning và cấu hình lỗi (không loại âm thầm).
+- [x] **[R]** Đếm kích thước mô hình: hệ số + intercept (Logistic); số cây/nút/lá (GBDT); dung lượng file model.
+- [ ] **[R]** `src/aggregate.py`: tổng hợp mean ± sample std qua 3 seed (đã có trong `tuning.py`), còn thiếu chênh lệch theo cặp Δ_s.
+- [ ] **[R]** Phân tích độ nhạy GBDT với lưới mở rộng (`tuning_gbdt_extended.json`) — bổ sung vì cấu hình tốt nhất nằm ở góc lưới.
 
 ### 3.2 Ablation (bắt buộc)
-- [ ] **[R]** `configs/ablation.yaml` + `experiments/run_ablation.py`: L1/L2/EN tại `C=1`, `l1_ratio=0.5`; đo hiệu năng, số hệ số |β|>1e-6, refit time.
+- [x] **[R]** `configs/ablation.yaml` + `experiments/run_ablation.py`: L1/L2/EN tại `C=1`, `l1_ratio=0.5`; đo hiệu năng, số hệ số |β|>1e-6, refit time.
 
 ### 3.3 Giải thích
 - [ ] **[T]** `src/explain_linear.py`: bảng hệ số, odds ratio, nhóm tham chiếu, tỷ lệ chọn và tỷ lệ cùng dấu qua seed.

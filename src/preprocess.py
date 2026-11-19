@@ -38,3 +38,15 @@ def reference_categories(pre: ColumnTransformer) -> dict:
         for col, cats, idx in zip(cols, enc.categories_, enc.drop_idx_)
         if idx is not None
     }
+
+
+def original_feature_of_columns(pre: ColumnTransformer) -> list[str]:
+    """Original column name for every output column of a fitted preprocessor, in order."""
+    num_cols = pre.transformers_[0][2]
+    cat_cols = pre.transformers_[1][2]
+    enc = pre.named_transformers_["cat"].named_steps["onehot"]
+    drops = enc.drop_idx_ if enc.drop_idx_ is not None else [None] * len(cat_cols)
+    groups = list(num_cols)
+    for col, cats, idx in zip(cat_cols, enc.categories_, drops):
+        groups += [col] * (len(cats) - (idx is not None))
+    return groups

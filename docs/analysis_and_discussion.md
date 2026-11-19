@@ -63,10 +63,30 @@ Mỗi ô metric sẽ là mean ± sample std trên ba seed. Baseline `C=1` đư�
 
 | Mô hình | ROC-AUC ↑ | AP ↑ | F1 ↑ | Balanced accuracy ↑ | Accuracy ↑ | Log-loss ↓ |
 | --- | --- | --- | --- | --- | --- | --- |
-| Logistic L1 | Chưa đo | Chưa đo | Chưa đo | Chưa đo | Chưa đo | Chưa đo |
-| Logistic L2 | Chưa đo | Chưa đo | Chưa đo | Chưa đo | Chưa đo | Chưa đo |
-| Logistic Elastic Net | Chưa đo | Chưa đo | Chưa đo | Chưa đo | Chưa đo | Chưa đo |
-| GBDT | Chưa đo | Chưa đo | Chưa đo | Chưa đo | Chưa đo | Chưa đo |
+| Logistic L1 | 0.9033 ± 0.0002 | 0.7580 ± 0.0002 | 0.6553 ± 0.0008 | 0.7634 ± 0.0005 | 0.8521 ± 0.0003 | 0.3206 ± 0.0002 |
+| Logistic L2 | 0.9035 ± 0.0001 | 0.7581 ± 0.0000 | 0.6556 ± 0.0004 | 0.7634 ± 0.0002 | 0.8524 ± 0.0002 | 0.3204 ± 0.0000 |
+| Logistic Elastic Net | 0.9033 ± 0.0000 | 0.7581 ± 0.0000 | 0.6559 ± 0.0000 | 0.7637 ± 0.0000 | 0.8523 ± 0.0000 | 0.3206 ± 0.0000 |
+| GBDT | 0.9270 ± 0.0000 | 0.8248 ± 0.0000 | 0.7068 ± 0.0000 | 0.7952 ± 0.0000 | 0.8730 ± 0.0000 | 0.2782 ± 0.0000 |
+
+Nguồn: artifact `tuning_logistic_l1-3`, `tuning_logistic_l2-3`, `tuning_logistic_elasticnet-3`, `tuning_gbdt-3` (`test_summary.csv`). “0.0000” nghĩa là std < 5e-5.
+
+| Mô hình | Siêu tham số chọn (seed 42 / 2026 / 5175) | CV ROC-AUC (mean 3 seed) | Kích thước mô hình | Tuning (s, 4 CPU) | Refit (s) |
+| --- | --- | --- | --- | --- | --- |
+| L1 | `C` = 1.52 / 1.52 / 0.53 | 0.9053 | 65 / 65 / 56 hệ số khác 0 trên 81 + 1 intercept; ~5 KB | 304 | 8.0 |
+| L2 | `C` = 0.19 / 0.53 / 0.53 | 0.9053 | 81 hệ số + 1 intercept; ~5 KB | 449 | 5.2 |
+| Elastic Net | `C`=1, `l1_ratio`=0.8 (cả 3 seed) | 0.9053 | 64 hệ số khác 0 + 1 intercept; ~5 KB | 239 | 9.3 |
+| GBDT | `n_estimators`=200, `learning_rate`=0.1, `max_depth`=4 (cả 3 seed) | 0.9285 | 200 cây, 5 938 nút, 3 069 lá (3 069 giá trị lá); ~502 KB | 146 | 10.0 |
+
+Không có lần fit lỗi, không có convergence warning khi refit, không mô hình nào chạm `max_iter`. Thời gian tuning là wall-clock với `n_jobs=-1` trên runner GitHub 4 CPU.
+
+**Nhận xét sơ bộ (RQ1, RQ2):**
+
+- GBDT hơn mọi biến thể Logistic một cách nhất quán trên cả 3 seed và 6 metric: ΔROC-AUC ≈ +0.024, ΔAP ≈ +0.067, ΔF1 ≈ +0.051, Δlog-loss ≈ −0.042. Confusion matrix test: GBDT giảm FN từ ~1 555 xuống 1 355 và FP từ ~849 xuống 712. Khoảng cách này lớn hơn nhiều so với std giữa các fold CV (≈ 0.002–0.003).
+- Ba biến thể Logistic gần như trùng nhau về hiệu năng (chênh ROC-AUC < 0.0003). CV ROC-AUC của L1 phẳng trong khoảng `C` ∈ [0.19, 100] (0.9048–0.9051), nên regularization ở mức vừa phải chủ yếu ảnh hưởng đến độ thưa, không đến hiệu năng.
+- L1 và Elastic Net loại 16–25 hệ số mà không mất hiệu năng. Số hệ số của L1 thay đổi giữa seed (65 vs 56) do `C` được chọn khác nhau — cần kiểm tra biến nào bị loại.
+- Độ biến thiên giữa seed trên test gần 0 vì các mô hình gần như tất định (Logistic lồi; GBDT không dùng `subsample`/`max_features`), seed chỉ đổi cách chia fold. Mean ± std qua seed vì vậy không phản ánh bất định lấy mẫu; dùng std giữa fold CV hoặc bootstrap test nếu cần khoảng tin cậy.
+- **Hạn chế cần báo cáo:** cấu hình GBDT tốt nhất nằm ở **góc lưới** (giá trị lớn nhất của cả 3 tham số), CV AUC còn tăng đơn điệu theo độ phức tạp. Do đó khoảng cách GBDT–Logistic có thể đang bị ước lượng thấp. Phân tích độ nhạy với lưới mở rộng (`tuning_gbdt_extended.json`) được thêm **sau khi đã xem kết quả test**, nên phải trình bày là phân tích bổ sung, không thay bảng chính.
+- Logistic “tốt nhất theo validation” (CV ROC-AUC trung bình 3 seed): Elastic Net 0.90534 > L1 0.90533 > L2 0.90530 — chênh lệch không đáng kể; Elastic Net (`C`=1, `l1_ratio`=0.8) được dùng làm đại diện Logistic cho phần SHAP.
 
 Với metric \(m_s\) ở seed \(s\):
 
@@ -111,9 +131,11 @@ Ablation chính giữ `C=1`, cùng split/pipeline/solver, thay penalty L1/L2/Ela
 
 | Penalty | ROC-AUC (mean ± std) | Số hệ số hoạt động (mean ± std) | Refit time (mean ± std) |
 | --- | --- | --- | --- |
-| L1 | Chưa đo | Chưa đo | Chưa đo |
-| L2 | Chưa đo | Chưa đo | Chưa đo |
-| Elastic Net | Chưa đo | Chưa đo | Chưa đo |
+| L1 | 0.9033 ± 0.0000 | 63 ± 0 | 11.23 ± 0.03 s |
+| L2 | 0.9033 ± 0.0000 | 81 ± 0 | 5.48 ± 0.02 s |
+| Elastic Net | 0.9033 ± 0.0000 | 66 ± 0 | 7.59 ± 0.01 s |
+
+Nguồn: artifact `ablation-3` (`ablation_summary.csv`). Tại `C=1`, đổi penalty không làm thay đổi hiệu năng (chênh ROC-AUC ~2e-5) nhưng L1 loại 18/81 hệ số, Elastic Net loại 15/81; đổi lại, SAGA cần nhiều vòng lặp hơn (L1 ~440, EN ~288, L2 ~240) nên refit chậm hơn gấp ~2 lần.
 
 Thảo luận theo các khả năng, chưa khẳng định chúng đã xảy ra:
 
