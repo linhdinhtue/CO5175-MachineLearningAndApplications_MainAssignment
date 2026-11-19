@@ -40,6 +40,23 @@ CV giữ vai trò validation. Ba seed với test cố định phản ánh biến
 
 ## 3. Hiệu năng dự đoán và phân tích sai số
 
+### 3.0. Dữ liệu và baseline (đã đo)
+
+Nguồn: artifact `data_check-1`, `baseline-1` (GitHub Actions run 44458977361, commit `981529a`; Ubuntu, 4 CPU, 15.6 GB RAM; Python 3.10.22, scikit-learn 1.7.2).
+
+**Dữ liệu.** Train 32 561 dòng (24 720 `<=50K` / 7 841 `>50K`, 24.1% dương), test 16 281 dòng (12 435 / 3 846, 23.6% dương). Missing chỉ ở `workclass`, `occupation`, `native-country` (train: 1 836 / 1 843 / 583). Trùng lặp: 24 dòng train, 5 dòng test — giữ nguyên vì Adult không có ID. SHA-256 lưu trong `data_meta.json`.
+
+**Baseline Logistic L2, `C=1`, SAGA** (bỏ `fnlwgt`, `education`; 81 hệ số + 1 intercept; hội tụ sau khoảng 240 vòng lặp):
+
+| Đánh giá | ROC-AUC | AP | F1 | Balanced acc. | Accuracy | Log-loss |
+| --- | --- | --- | --- | --- | --- | --- |
+| CV 5-fold × 3 seed (15 fold, mean ± std) | 0.9053 ± 0.0029 | 0.7638 ± 0.0070 | 0.6597 ± 0.0089 | 0.7653 ± 0.0060 | 0.8509 ± 0.0035 | 0.3214 ± 0.0043 |
+| Test (3 seed, mean ± std) | 0.9033 ± 0.0000 | 0.7580 ± 0.0000 | 0.6561 ± 0.0000 | 0.7639 ± 0.0000 | 0.8523 ± 0.0000 | 0.3205 ± 0.0000 |
+
+Refit khoảng 7.3 s, inference trên 16 281 mẫu khoảng 0.03 s. Confusion matrix test: TN 11 584, FP 851, FN 1 553, TP 2 293; recall lớp dương 0.596 thấp hơn đáng kể so với lớp âm.
+
+**Quan sát quan trọng:** std trên test bằng 0 (khoảng 1e-8) vì Logistic là bài toán lồi; seed chỉ đổi thứ tự duyệt của SAGA nên mọi seed hội tụ về cùng nghiệm. Biến thiên có ý nghĩa nằm ở giữa các fold CV (std ROC-AUC 0.003). Hệ quả: với mô hình tuned, std qua seed chủ yếu đến từ việc chọn siêu tham số khác nhau; cần nói rõ điều này khi diễn giải mean ± std.
+
 ### 3.1. Bảng kết quả chính
 
 Mỗi ô metric sẽ là mean ± sample std trên ba seed. Baseline `C=1` được báo cáo riêng trong báo cáo tiến độ; bảng dưới dành cho các mô hình đã tuning.

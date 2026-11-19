@@ -22,7 +22,7 @@ def make_model(X, cfg: dict, seed: int) -> Pipeline:
 
 def main() -> None:
     cfg = parse_config()
-    out = output_dir("baseline")
+    out = output_dir(cfg["_name"])
     X_train, y_train, X_test, y_test = load_adult(cfg["drop_features"])
 
     cv_rows, test_rows = [], []

@@ -5,7 +5,7 @@ from src.utils import env_info, output_dir, parse_config, save_json
 
 def main() -> None:
     cfg = parse_config()
-    out = output_dir("data_check")
+    out = output_dir(cfg["_name"])
 
     train, test = load_raw()
     meta = {

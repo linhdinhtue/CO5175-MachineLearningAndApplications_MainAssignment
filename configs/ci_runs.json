@@ -1,0 +1,9 @@
+{
+  "runs": [
+    {"task": "tuning", "config": "configs/tuning_logistic_l1.json"},
+    {"task": "tuning", "config": "configs/tuning_logistic_l2.json"},
+    {"task": "tuning", "config": "configs/tuning_logistic_elasticnet.json"},
+    {"task": "tuning", "config": "configs/tuning_gbdt.json"},
+    {"task": "ablation", "config": "configs/ablation.json"}
+  ]
+}

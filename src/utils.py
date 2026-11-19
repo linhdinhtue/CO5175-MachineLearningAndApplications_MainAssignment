@@ -16,6 +16,7 @@ def parse_config() -> dict:
     with open(args.config, encoding="utf-8") as f:
         cfg = json.load(f)
     cfg["_config_path"] = args.config
+    cfg["_name"] = Path(args.config).stem
     return cfg
 
 

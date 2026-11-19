@@ -35,17 +35,17 @@ Quy ước: mỗi người tự commit phần mình (giảng viên có thể xem
 ## Giai đoạn 2 — Tài liệu & baseline (tuần 2–3)
 
 ### 2.1 Dữ liệu
-- [ ] **[R]** Viết `src/data.py`: tải Adult (`adult.data`, `adult.test`) từ UCI, lưu vào `data/raw/`.
-- [ ] **[R]** Ghi `data/README` hoặc `results/data_meta.json`: URL nguồn, SHA-256, số dòng, tỷ lệ nhãn train/test.
-- [ ] **[R]** Chuẩn hóa nhãn (`>50K.` → `>50K`), `?` → missing, quy tắc xử lý bản ghi trùng.
+- [x] **[R]** Viết `src/data.py`: tải Adult (`adult.data`, `adult.test`) từ UCI, lưu vào `data/raw/`.
+- [x] **[R]** Ghi `data/README` hoặc `results/data_meta.json`: URL nguồn, SHA-256, số dòng, tỷ lệ nhãn train/test.
+- [x] **[R]** Chuẩn hóa nhãn (`>50K.` → `>50K`), `?` → missing, quy tắc xử lý bản ghi trùng.
 - [ ] **[R]** Notebook `notebooks/view_data.ipynb`: EDA cơ bản (phân bố nhãn, missing, biến số/phân loại, tương quan).
 
 ### 2.2 Pipeline & baseline
-- [ ] **[R]** `src/preprocess.py`: `ColumnTransformer` (median/mode impute, one-hot, `StandardScaler` cho Logistic); bỏ `fnlwgt`, `education`.
-- [ ] **[R]** `src/cv.py`: tạo Stratified 5-fold cố định theo seed {42, 2026, 5175}, lưu chỉ số fold.
-- [ ] **[R]** `src/metrics.py`: ROC-AUC, AP, F1, balanced accuracy, accuracy, log-loss (ngưỡng 0.5).
-- [ ] **[R]** `configs/baseline.yaml` + `experiments/run_baseline.py`: Logistic L2 `C=1`, 3 seed.
-- [ ] **[R]** Ghi metadata máy (CPU, RAM, OS, phiên bản thư viện) vào `results/env.json`.
+- [x] **[R]** `src/preprocess.py`: `ColumnTransformer` (median/mode impute, one-hot, `StandardScaler` cho Logistic); bỏ `fnlwgt`, `education`.
+- [x] **[R]** `src/cv.py`: tạo Stratified 5-fold cố định theo seed {42, 2026, 5175}, lưu chỉ số fold.
+- [x] **[R]** `src/metrics.py`: ROC-AUC, AP, F1, balanced accuracy, accuracy, log-loss (ngưỡng 0.5).
+- [x] **[R]** `configs/baseline.yaml` + `experiments/run_baseline.py`: Logistic L2 `C=1`, 3 seed.
+- [x] **[R]** Ghi metadata máy (CPU, RAM, OS, phiên bản thư viện) vào `results/env.json`.
 
 ### 2.3 Lý thuyết
 - [ ] **[T]** Hệ thống hóa các hướng tiếp cận (mô hình nội tại vs hậu nghiệm: Lasso, Elastic Net, GAM/EBM, LIME, SHAP) kèm ưu/nhược điểm.
