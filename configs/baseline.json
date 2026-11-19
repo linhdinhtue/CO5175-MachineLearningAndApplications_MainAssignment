@@ -1,0 +1,12 @@
+{
+  "seeds": [42, 2026, 5175],
+  "n_folds": 5,
+  "drop_features": ["fnlwgt", "education"],
+  "model": {
+    "penalty": "l2",
+    "C": 1.0,
+    "solver": "saga",
+    "max_iter": 5000,
+    "tol": 1e-4
+  }
+}
