@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | 0. Thiết lập | Hạ tầng CI xong; còn phân quyền, chọn hình thức trình bày | `.github/workflows/run-experiment.yml`, `configs/ci_runs.json` |
 | 1. Proposal | Chưa nộp; đã chốt hình paper cần tái hiện | — |
-| 2. Dữ liệu & baseline | Xong phần code/kết quả; còn EDA notebook, lý thuyết, báo cáo tiến độ | `data_check-1`, `baseline-1` |
+| 2. Dữ liệu & baseline | Xong phần code/kết quả; còn EDA notebook, lý thuyết, báo cáo tiến độ | `results/`(`data_check-1`, `baseline-1`) |
 | 3. Thực nghiệm | **Xong toàn bộ**: tuning, ablation, SHAP, tái hiện paper (Figure 3, 4), 3 hướng bonus (EBM, ổn định giải thích, fairness), KTC bootstrap, dependence plot | `tuning_*-3`, `ablation-3`, `tuning_gbdt_extended-4`, `explain-4`, `reproduce_shap-5`, `reproduce_shap_v2-6`, `tuning_ebm_*-7`, `stability-7`, `analysis-7` |
 | 4. Hoàn thiện | Đã điền số liệu và viết kết luận RQ1–RQ3 trong docs; README có hướng dẫn chạy; chưa viết báo cáo PDF/slide | `docs/analysis_and_discussion.md`, `README.md` |
 
