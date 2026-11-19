@@ -1,0 +1,18 @@
+
+name: Run experiment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout experiment branch
+        uses: actions/checkout@v4
+        with:
+          ref: Thuy-branch
+
+      - name: Run experiment
+        run: |
+          echo "Running experiments from Thuy-branch"
