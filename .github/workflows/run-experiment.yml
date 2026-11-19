@@ -15,13 +15,9 @@ name: Run experiment
   workflow_dispatch:
     inputs:
       task:
-        description: "Module trong experiments/ (vd: data_check, baseline)"
+        description: "Module trong experiments/ (vd: data_check, baseline, tuning, ablation)"
         required: true
-        default: data_check
-        type: choice
-        options:
-          - data_check
-          - baseline
+        default: baseline
       config:
         description: "Đường dẫn config (để trống = configs/<task>.json)"
         required: false
@@ -30,15 +26,45 @@ name: Run experiment
 permissions:
   contents: read
 
+# each web-UI file edit is a commit; keep only the latest run
+concurrency:
+  group: run-experiment-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  run:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: m
+        env:
+          EVENT: ${{ github.event_name }}
+          TASK: ${{ inputs.task }}
+          CONFIG: ${{ inputs.config }}
+        # push: runs listed in configs/ci_runs.json; manual run: the chosen task only
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            if [ -z "$CONFIG" ]; then CONFIG="configs/${TASK}.json"; fi
+            MATRIX=$(jq -cn --arg t "$TASK" --arg c "$CONFIG" '[{task:$t, config:$c}]')
+          else
+            MATRIX=$(jq -c '.runs' configs/ci_runs.json)
+          fi
+          MATRIX=$(echo "$MATRIX" | jq -c 'map(. + {name: (.config | split("/") | last | rtrimstr(".json"))})')
+          echo "$MATRIX"
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+  run:
+    needs: plan
+    if: needs.plan.outputs.matrix != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
     strategy:
       fail-fast: false
       matrix:
-        # push: run all listed tasks; manual run: only the chosen task
-        task: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', inputs.task) || '["data_check", "baseline"]') }}
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    name: ${{ matrix.name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -60,17 +86,13 @@ jobs:
       - name: Run ${{ matrix.task }}
         env:
           TASK: ${{ matrix.task }}
-          CONFIG: ${{ inputs.config }}
-        run: |
-          if [ -z "$CONFIG" ]; then
-            CONFIG="configs/${TASK}.json"
-          fi
-          python -m "experiments.${TASK}" --config "$CONFIG"
+          CONFIG: ${{ matrix.config }}
+        run: python -m "experiments.${TASK}" --config "$CONFIG"
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.task }}-${{ github.run_number }}
-          path: results/${{ matrix.task }}/
+          name: ${{ matrix.name }}-${{ github.run_number }}
+          path: results/${{ matrix.name }}/
           if-no-files-found: warn
