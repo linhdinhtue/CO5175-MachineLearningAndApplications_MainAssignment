@@ -1,8 +1,3 @@
 {
-  "runs": [
-    {"task": "tuning", "config": "configs/tuning_ebm_gam.json"},
-    {"task": "tuning", "config": "configs/tuning_ebm_ga2m.json"},
-    {"task": "stability", "config": "configs/stability.json"},
-    {"task": "analysis", "config": "configs/analysis.json"}
-  ]
+  "runs": []
 }

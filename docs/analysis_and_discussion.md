@@ -1,6 +1,6 @@
 # Analysis and discussion — Topic 1
 
-> Trạng thái: phân tích phương pháp và thiết kế thảo luận trước thực nghiệm. Chưa có dataset tải về, mô hình đã fit hay kết quả đo trong dự án tại thời điểm soạn. Các ô “Chưa đo” là dữ liệu còn thiếu, không phải kết quả bằng 0. Tài liệu này chưa phải phần kết luận thực nghiệm để nộp.
+> Trạng thái (cập nhật 2026-11-19): đã có kết quả thực nghiệm đầy đủ cho baseline, tuning, ablation, SHAP, tái hiện paper (Figure 3–4) và 3 hướng bonus. Mọi số liệu ghi kèm tên artifact GitHub Actions làm nguồn. Phần phương pháp ở mục 1–2 là thiết kế viết trước khi chạy.
 
 Tài liệu triển khai phần phân tích của [proposal](../README.md), bám mục 4.1–4.4 trong `00_ML-Assignment-Topics.pdf`. Mục tiêu là trả lời ba câu hỏi về hiệu năng, ảnh hưởng của regularization và giá trị/giới hạn của giải thích.
 
@@ -262,13 +262,78 @@ Với bài toán nhỏ, có thể tính tổng Shapley bằng liệt kê tập c
 
 ## 7. Mở rộng, hạn chế và kết luận hiện tại
 
-**Bootstrap (tùy chọn):** resample train 30 lần, cố định hyperparameter đã chọn và tập quan sát để giải thích; refit toàn pipeline. Đo tần suất chọn biến, mức nhất quán dấu, Jaccard top-k và tương quan thứ hạng. Phân biệt bất định do resampling với thay background SHAP; giữ background cố định nếu chỉ muốn nghiên cứu ảnh hưởng refit. Đây là ổn định có điều kiện trên hyperparameter đã chọn, không gồm bất định do tuning lại.
+### 7.1. Bonus — EBM: mô hình dễ diễn giải nhưng phi tuyến (artifact `tuning_ebm_gam-7`, `tuning_ebm_ga2m-7`)
 
-**Fairness (tùy chọn):** báo cáo cỡ mẫu, tỷ lệ lớp, TPR/FPR theo nhóm tại cùng ngưỡng; mẫu số bằng 0 ghi không xác định. Không kết luận công bằng chỉ vì bỏ biến nhạy cảm: biến khác có thể chứa thông tin liên quan. Các phân tích này chỉ nhằm đánh giá mô hình học thuật trên dataset, không chứng minh phù hợp triển khai thực tế.
+Explainable Boosting Machine (`interpret-core` 0.7.8, tham số mặc định, `n_jobs=1`), cùng 3 seed và cùng fold CV với các mô hình khác. **Không tuning** (1 cấu hình mỗi biến thể) → ngân sách tuning thấp hơn Logistic/GBDT (12 cấu hình); kết quả của EBM vì vậy là cận dưới. GAM = chỉ hàm một biến; GA2M = thêm 10 tương tác cặp.
 
-**Hạn chế dự kiến:** một dataset không đại diện mọi bài toán; test cố định và ba seed chưa bao phủ toàn bộ bất định; ngân sách tuning bằng số lần fit không bằng chi phí; lời giải thích nhạy với biến tương quan và background; độ thưa không phải thước đo đầy đủ của khả năng hiểu; chưa có thực nghiệm người dùng hoặc bằng chứng nhân quả.
+| Mô hình | ROC-AUC | AP | F1 | Balanced acc. | Accuracy | Log-loss | Kích thước | Refit |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Logistic Elastic Net (tuned) | 0.9033 | 0.7581 | 0.6559 | 0.7637 | 0.8523 | 0.3206 | 64 hệ số khác 0; ~5 KB | 9 s |
+| GBDT (tuned) | 0.9270 | 0.8248 | 0.7068 | 0.7952 | 0.8730 | 0.2782 | 200 cây, 5 938 nút; ~502 KB | 10 s |
+| **EBM GAM** (không tương tác) | 0.9267 ± 0.0002 | 0.8254 ± 0.0003 | 0.7069 ± 0.0012 | 0.7958 ± 0.0008 | 0.8727 ± 0.0005 | 0.2768 ± 0.0003 | 12 hàm một biến, 449 giá trị; ~73 KB | 122 s |
+| **EBM GA2M** (10 tương tác) | 0.9272 ± 0.0002 | 0.8266 ± 0.0004 | 0.7088 ± 0.0009 | 0.7973 ± 0.0007 | 0.8732 ± 0.0004 | 0.2758 ± 0.0004 | 22 term, ~7 500 giá trị; ~1 MB | 135 s |
 
-**Kết luận hiện tại:** đã xác định protocol và các bằng chứng cần thu thập. Chưa có cơ sở chọn mô hình tốt nhất, xác định biến quan trọng nhất hay kết luận GBDT đánh đổi hiệu năng lấy khả năng diễn giải ở mức nào. Sau khi chạy, thay các ô chưa đo bằng số liệu có nguồn, thêm hình và đường dẫn config/log, rồi viết kết luận theo RQ1–RQ3.
+Bootstrap 1 000 lần trên test (mô hình seed 42, artifact `analysis-7`, khoảng tin cậy 95%):
+
+| Chênh lệch | ROC-AUC | AP | Log-loss |
+| --- | --- | --- | --- |
+| GBDT − Elastic Net | +0.0236 [0.0212, 0.0261] | +0.0667 [0.0599, 0.0738] | −0.0424 [−0.0463, −0.0385] |
+| EBM GA2M − Elastic Net | +0.0237 [0.0213, 0.0259] | +0.0682 [0.0613, 0.0751] | −0.0444 [−0.0484, −0.0403] |
+| GBDT − EBM GA2M | −0.0001 [−0.0014, 0.0013] | −0.0015 [−0.0042, 0.0012] | +0.0020 [−0.0004, 0.0043] |
+
+Kết luận bonus:
+
+- **Trên Adult, đánh đổi hiệu năng–diễn giải gần như biến mất khi dùng EBM.** Ngay cả GAM thuần cộng tính (12 đồ thị một biến, đọc được hoàn toàn) cũng chỉ kém GBDT 0.0003 ROC-AUC và tốt hơn về log-loss; GA2M ngang GBDT (khoảng tin cậy của chênh lệch chứa 0 với ROC-AUC và AP).
+- **Khoảng cách Logistic → GBDT đến từ phi tuyến một biến, không phải tương tác:** GAM đã thu hẹp ~99% khoảng cách ROC-AUC (0.9033 → 0.9267 so với GBDT 0.9270); thêm 10 tương tác chỉ cộng thêm 0.0005. Tương tác quan trọng nhất là `age × hours-per-week`.
+- Chi phí: EBM huấn luyện chậm hơn GBDT ~12 lần (122–135 s so với 10 s); GA2M lớn gấp đôi GBDT trên đĩa.
+- Hạn chế: EBM không tuning; xếp hạng term importance của EBM (marital-status, age, capital-gain, education-num, …) gần trùng xếp hạng SHAP của GBDT, nhưng đó là hai định nghĩa độ quan trọng khác nhau.
+
+### 7.2. Dependence plot — kiểm chứng giả thuyết phi tuyến (artifact `analysis-7`, `plots/dependence.png`)
+
+So sánh đóng góp (log-odds) của SHAP GBDT, SHAP Elastic Net và hàm hình dạng EBM GA2M theo giá trị gốc của biến, trên 500 dòng test cố định:
+
+- **`age`:** GBDT và EBM cùng cho dạng **chữ U ngược** — tăng mạnh 20–45 tuổi, cực đại ~45–55, giảm sau 60. Logistic buộc đường thẳng tăng đều → đánh giá thấp người trẻ và đánh giá cao người lớn tuổi. Đây là lý do `age` xếp hạng 2 ở GBDT nhưng chỉ hạng 7 ở Logistic (mục 4.2).
+- **`capital-gain`:** dạng **ngưỡng không đơn điệu**: giá trị dương nhỏ (khoảng dưới 3 000) có đóng góp âm (~ −4 với EBM), trên ~7 000 nhảy lên +5 đến +9. Logistic tuyến tính ngoại suy cực đoan: điểm `capital-gain` = 99 999 nhận +31 log-odds. Điều này giải thích dòng 47 ở mục 3.2 (GBDT −2.24 so với Logistic +0.92).
+- **`hours-per-week`:** tăng tới ~50 giờ rồi đi ngang/giảm; Logistic tiếp tục tăng tuyến tính.
+- **`education-num`:** gần tuyến tính ở cả ba mô hình → biến duy nhất trong 4 biến mà Logistic biểu diễn phù hợp.
+- Hàm hình dạng EBM có răng cưa ở vùng `capital-gain` thưa dữ liệu — dấu hiệu khớp nhiễu ở bin ít mẫu, cần lưu ý khi đọc mô hình.
+
+### 7.3. Bonus — độ ổn định của giải thích (artifact `stability-7`)
+
+Bootstrap 30 lần trên train, giữ cố định siêu tham số (GBDT 200/0.1/4; Elastic Net `C`=1, `l1_ratio`=0.8), background 100 dòng và 500 dòng test được giải thích (cùng ID với mục 4.2). So mỗi lần bootstrap với mô hình fit trên toàn train.
+
+| Mô hình | Spearman xếp hạng 12 biến (TB / min) | Jaccard top-5 (TB / min) | Biến hạng 1 giữ nguyên | Test ROC-AUC (TB ± std; 95%) |
+| --- | --- | --- | --- | --- |
+| Elastic Net | 0.983 / 0.965 | 0.89 / 0.67 | 30/30 | 0.9030 ± 0.0006 [0.9019, 0.9042] |
+| GBDT | 0.981 / 0.895 | 0.90 / 0.67 | 30/30 | 0.9254 ± 0.0006 [0.9243, 0.9266] |
+
+- Xếp hạng độ quan trọng **ổn định cao** ở cả hai mô hình; `marital-status` luôn hạng 1. Bất ổn tập trung ở giữa bảng: Elastic Net — `sex`/`occupation`/`relationship` đổi chỗ (hạng 4–7); GBDT — `relationship` dao động hạng 4–8.
+- Tương quan xếp hạng giữa hai mô hình (fit toàn train) chỉ 0.83 → **khác biệt giữa mô hình lớn hơn nhiều so với biến động do dữ liệu** trong cùng một mô hình (≥ 0.90). Hai mô hình có hiệu năng khác nhau "kể" hai câu chuyện khác nhau một cách nhất quán.
+- Hệ số Elastic Net: 34/81 hệ số được chọn ở cả 30 lần với dấu không đổi (gồm mọi biến số và các nhóm lớn). Không ổn định nằm ở dummy hiếm (`native-country`, `occupation_Armed-Forces`, `workclass_Never-worked`) và một số hệ số nhỏ đổi dấu (`marital-status_Widowed` 76%, `Married-spouse-absent` 73%, `occupation_Craft-repair` 69% cùng dấu) → không nên diễn giải dấu của các hệ số này.
+- Biến thiên hiệu năng do dữ liệu train (std ROC-AUC ~0.0006) lớn hơn hẳn std qua seed (~1e-5) nhưng nhỏ hơn rất nhiều khoảng cách GBDT–Logistic (0.024).
+
+### 7.4. Bonus — fairness theo nhóm (artifact `analysis-7`, ngưỡng 0.5, chỉ so nhóm ≥ 100 mẫu)
+
+| Mô hình | `sex`: chênh tỷ lệ chọn | `sex`: chênh TPR | `sex`: chênh FPR | `race`: chênh TPR | `race`: chênh PPV |
+| --- | --- | --- | --- | --- | --- |
+| Elastic Net | 0.18 | 0.10 | 0.08 | 0.32 | 0.21 |
+| GBDT | 0.17 | 0.07 | 0.06 | 0.35 | 0.43 |
+| EBM GA2M | 0.17 | 0.06 | 0.06 | 0.30 | 0.40 |
+
+- Theo `sex` (Female n = 5 421, Male n = 10 860; tỷ lệ dương thật 0.11 vs 0.30): chênh tỷ lệ chọn ~0.17–0.18 chủ yếu phản ánh chênh tỷ lệ gốc. Chênh TPR (equal opportunity) của Logistic lớn nhất (0.51 vs 0.61); GBDT/EBM thu hẹp còn 0.06–0.07 nhờ tăng recall nhóm nữ (0.59–0.60).
+- Theo `race`: nhóm nhỏ (Amer-Indian-Eskimo n = 159, Other n = 135) có TPR thấp (0.32–0.56) và PPV dao động mạnh (GBDT: 0.50 ở Amer-Indian-Eskimo so với 0.93 ở Other) → chênh lệch lớn nhưng **kém tin cậy** do cỡ mẫu nhỏ (chỉ ~19–24 ca dương).
+- Mô hình chính xác hơn không làm xấu đi equal opportunity theo `sex` trong dữ liệu này, nhưng làm tăng chênh PPV theo `race` ở nhóm nhỏ. Đây là phân tích mô tả, không phải đánh giá công bằng đầy đủ; không can thiệp giảm thiên lệch.
+
+### 7.5. Hạn chế và kết luận hiện tại
+
+**Hạn chế:** một dataset; test cố định; std qua seed gần 0 vì mô hình gần như tất định (đã bổ sung bootstrap train/test); ngân sách tuning tính bằng số cấu hình, không bằng thời gian, và EBM không tuning; lưới GBDT mở rộng và thiết lập tái hiện lần 2 được thêm sau khi xem kết quả; SHAP giả định đặc trưng độc lập và phụ thuộc background; độ thưa không phải thước đo đầy đủ của khả năng hiểu; chưa có thực nghiệm người dùng hoặc bằng chứng nhân quả.
+
+**Kết luận theo RQ:**
+
+- **RQ1:** GBDT tốt hơn mọi biến thể Logistic có ý nghĩa (ROC-AUC +0.024, KTC 95% [0.021, 0.026]; AP +0.067; log-loss −0.042). Lưới mở rộng chỉ thêm 0.0003.
+- **RQ2:** regularization gần như không ảnh hưởng hiệu năng trên Adult (ba biến thể chênh < 0.0003 ROC-AUC) nhưng quyết định độ thưa (L1/EN bỏ 16–25 hệ số, chủ yếu dummy hiếm); hệ số lớn ổn định, hệ số nhỏ không ổn định về dấu.
+- **RQ3:** hệ số Logistic và SHAP GBDT đồng thuận ở biến đầu và cuối bảng nhưng khác ở `age`, `sex`, `relationship`; dependence plot cho thấy khác biệt do phi tuyến (`age`, `capital-gain`, `hours-per-week`). Giải thích ổn định trước nhiễu dữ liệu nhưng phụ thuộc mạnh vào lớp mô hình.
+- **Bonus:** EBM GAM/GA2M đạt hiệu năng ngang GBDT mà vẫn diễn giải trực tiếp được → trên dữ liệu bảng cỡ Adult, "đánh đổi" chủ yếu là giữa mô hình **tuyến tính** và **phi tuyến**, không nhất thiết giữa **dễ hiểu** và **hộp đen**.
 
 ## 8. Bằng chứng cần bàn giao và khai báo AI
 

@@ -10,8 +10,8 @@
 | 0. Thiết lập | Hạ tầng CI xong; còn phân quyền, chọn hình thức trình bày | `.github/workflows/run-experiment.yml`, `configs/ci_runs.json` |
 | 1. Proposal | Chưa nộp; đã chốt hình paper cần tái hiện | — |
 | 2. Dữ liệu & baseline | Xong phần code/kết quả; còn EDA notebook, lý thuyết, báo cáo tiến độ | `data_check-1`, `baseline-1` |
-| 3. Thực nghiệm | Tuning, ablation, SHAP, tái hiện paper (Figure 3, 4) xong; chưa làm bonus | `tuning_*-3`, `ablation-3`, `tuning_gbdt_extended-4`, `explain-4`, `reproduce_shap-5`, `reproduce_shap_v2-6` |
-| 4. Hoàn thiện | Đã điền số liệu vào docs; chưa viết báo cáo/slide | `docs/analysis_and_discussion.md` |
+| 3. Thực nghiệm | **Xong toàn bộ**: tuning, ablation, SHAP, tái hiện paper (Figure 3, 4), 3 hướng bonus (EBM, ổn định giải thích, fairness), KTC bootstrap, dependence plot | `tuning_*-3`, `ablation-3`, `tuning_gbdt_extended-4`, `explain-4`, `reproduce_shap-5`, `reproduce_shap_v2-6`, `tuning_ebm_*-7`, `stability-7`, `analysis-7` |
+| 4. Hoàn thiện | Đã điền số liệu và viết kết luận RQ1–RQ3 trong docs; README có hướng dẫn chạy; chưa viết báo cáo PDF/slide | `docs/analysis_and_discussion.md`, `README.md` |
 
 ## Phần Thủy đã thực hiện: hướng đi, ưu điểm, nhược điểm
 
@@ -27,7 +27,7 @@ Toàn bộ phần code thực nghiệm, kết quả và số liệu trong docs t
 | Giải thích | TreeExplainer (GBDT) và LinearExplainer (Elastic Net), `interventional`, giải thích **raw log-odds**, 100 background, 500 mẫu test cố định; gộp SHAP theo biến gốc | Tính cộng khớp tới 5e-8; rất nhanh (< 0.5 s); lưu ID mẫu để tái lập | Giả định đặc trưng độc lập; kết quả phụ thuộc background; gộp one-hot là phép cộng để báo cáo, không phải Shapley của biến gộp; mới chạy 1 seed |
 | Tái hiện paper | Chọn **Figure 3** (Kernel SHAP vs Shapley sampling vs LIME) và **Figure 4** (ví dụ đồ chơi) của Lundberg & Lee (2017); bỏ Figure 5 (MNIST/DeepLIFT) | Chạy được trên CPU; Figure 4 so sánh chính xác được; Figure 3 kiểm tra được đúng luận điểm chính của paper | Paper không nêu dữ liệu/độ sâu cây/background cho Figure 3 → nhóm tự đặt giả định, chỉ so định tính; số Figure 4 đọc từ hình là xấp xỉ |
 | Tái hiện lần 2 | Sửa cách tính ngân sách Shapley sampling theo paper (chia cho M đặc trưng), thêm biến thể Kernel SHAP top-10, ép cây sparse dùng đúng 3 đặc trưng; giữ cách cũ làm đối chứng | Giải thích được chênh lệch lần 1 bằng thực nghiệm; hình sparse gần trùng paper; có đối chứng cho thấy ưu thế của Kernel SHAP đến từ ước lượng đồng thời | Sửa thiết lập sau khi xem kết quả lần 1 (phải nói rõ trong báo cáo); Kernel SHAP vẫn lệch thấp ở cây sparse, nguyên nhân mới là giả thuyết |
-| Bonus: EBM (GAM / GA2M) | Thêm Explainable Boosting Machine (`interpret-core`) làm mô hình **dễ diễn giải nhưng phi tuyến**; 2 biến thể: không tương tác (GAM thuần) và 10 tương tác cặp (GA2M); 3 seed, cùng fold | Trả lời trực tiếp câu hỏi của đề tài (có thu hẹp được khoảng cách với hộp đen mà vẫn đọc được mô hình không?); đề có nêu GAM/EBM và InterpretML; cặp GAM vs GA2M là một ablation tự nhiên về vai trò tương tác | Không tuning (chỉ 1 cấu hình mỗi biến thể, dùng mặc định) → ngân sách tuning **thấp hơn** các mô hình khác, phải ghi rõ; `interpret-core` chưa ghim phiên bản (lấy từ `env.json` rồi ghim sau) |
+| Bonus: EBM (GAM / GA2M) | Thêm Explainable Boosting Machine (`interpret-core`) làm mô hình **dễ diễn giải nhưng phi tuyến**; 2 biến thể: không tương tác (GAM thuần) và 10 tương tác cặp (GA2M); 3 seed, cùng fold | Trả lời trực tiếp câu hỏi của đề tài (có thu hẹp được khoảng cách với hộp đen mà vẫn đọc được mô hình không?); đề có nêu GAM/EBM và InterpretML; cặp GAM vs GA2M là một ablation tự nhiên về vai trò tương tác | Không tuning (chỉ 1 cấu hình mỗi biến thể, dùng mặc định) → ngân sách tuning **thấp hơn** các mô hình khác, phải ghi rõ; `interpret-core` đã ghim 0.7.8 theo `env.json` |
 | Bonus: ổn định giải thích | Bootstrap 30 lần trên train, giữ cố định siêu tham số, background và 500 dòng được giải thích; đo Spearman xếp hạng, Jaccard top-5, tần suất chọn hệ số, độ nhất quán dấu | Nằm trong "Hướng mở rộng" của đề; biến "giải thích có đáng tin không" thành con số; đồng thời cho khoảng biến thiên hiệu năng thật (bù cho std qua seed ≈ 0) | Chỉ đo bất định do dữ liệu train, không gồm bất định do tuning lại; 30 lần là ít cho percentile đuôi |
 | Bonus: fairness theo nhóm | TPR/FPR/PPV/tỷ lệ chọn theo `sex` và `race` cho 5 mô hình, ngưỡng 0.5; chỉ so nhóm có ≥ 100 mẫu | Nằm trong "Hướng mở rộng" của đề; rẻ (dùng lại dự đoán); cho thấy đánh đổi hiệu năng–diễn giải còn có chiều công bằng | Chỉ mô tả, không can thiệp giảm thiên lệch; nhóm `race` nhỏ nên khoảng cách kém tin cậy; không kết luận "công bằng" từ việc bỏ biến nhạy cảm |
 | Bổ sung phân tích | Bootstrap 1 000 lần trên **test** cho chênh lệch theo cặp (GBDT/EBM − từng Logistic); dependence plot so SHAP GBDT, SHAP Logistic và hàm hình dạng EBM cho 4 biến số | Cho khoảng tin cậy 95% (rubric 30% cần "giải thích kết quả"); kiểm chứng giả thuyết phi tuyến của `age`/`capital-gain` bằng hình | Bootstrap test giữ mô hình cố định (seed 42), không gồm biến thiên do huấn luyện |
@@ -38,7 +38,7 @@ Toàn bộ phần code thực nghiệm, kết quả và số liệu trong docs t
 | --- | --- | --- | --- |
 | Thực nghiệm & phân tích | 30% | Baseline, 3 seed, tuning cùng ngân sách, ablation, SHAP, tái hiện Figure 3–4 có giải thích chênh lệch | Thêm **khoảng tin cậy bootstrap** và **dependence plot** — vì std qua seed ≈ 0 là điểm yếu dễ bị hỏi, và giả thuyết phi tuyến cần bằng chứng trực tiếp |
 | Bonus cải tiến/ứng dụng | +1 | Chưa có | Chọn **cả 3 hướng rẻ**: EBM (trọng tâm), ổn định giải thích, fairness. Lý do: cả 3 đều được đề gợi ý trực tiếp cho Topic 1, chạy được trên CPU miễn phí, và EBM tạo được câu chuyện "cải tiến" rõ ràng: một mô hình vừa đọc được vừa (kỳ vọng) gần hiệu năng GBDT. Không chọn MLP vì không thêm gì cho câu chuyện diễn giải và tốn tuning |
-| Mã nguồn & tái lập | 10% | Config từng thí nghiệm, CI, `env.json` | Còn thiếu README hướng dẫn chạy và ghim phiên bản `interpret-core` → làm ngay sau đợt chạy này |
+| Mã nguồn & tái lập | 10% | Config từng thí nghiệm, CI, `env.json`, README hướng dẫn chạy (mục 6.1), `interpret-core` đã ghim | Còn: một người khác chạy lại theo README để xác nhận |
 | Phương pháp & toán | 20% | Công thức cơ bản trong proposal | Viết trong báo cáo: loss Logistic + penalty, gradient boosting, Shapley (Eq. 8), Kernel SHAP (Theorem 2), Linear SHAP, EBM (cyclic boosting, GA2M) |
 | Tổng quan | 15% | Chưa có | Viết trong báo cáo: so sánh mô hình nội tại (Lasso/EN/GAM/EBM) với hậu nghiệm (LIME/SHAP) có phản biện — dùng chính kết quả Figure 4 (LIME sai dấu) làm minh họa |
 | Trình bày | 25% | Chưa có | Chọn A hoặc B sớm; mỗi người phải giải thích được code và công thức |
@@ -90,7 +90,7 @@ Toàn bộ phần code thực nghiệm, kết quả và số liệu trong docs t
 - [x] `experiments/tuning.py`: `GridSearchCV` theo ROC-AUC, refit toàn train, đánh giá test; lưu `cv_results_`, tham số tốt nhất, dự đoán test, thời gian tuning/refit/inference. — `tuning_*-3` **(Thủy)**
 - [x] Ghi lại convergence warning và cấu hình lỗi (không loại âm thầm). **(Thủy)**
 - [x] Đếm kích thước mô hình: hệ số + intercept (Logistic); số cây/nút/lá (GBDT); dung lượng model. **(Thủy)**
-- [ ] Chênh lệch theo cặp (GBDT/EBM − từng Logistic) kèm khoảng tin cậy bootstrap 95% trên test — **code xong (Thủy), đang chờ artifact `analysis`**.
+- [x] Chênh lệch theo cặp kèm KTC bootstrap 95% trên test: GBDT − Elastic Net ROC-AUC +0.0236 [0.0212, 0.0261]; GBDT − EBM chứa 0. — `analysis-7` **(Thủy)**
 - [x] Phân tích độ nhạy GBDT với lưới mở rộng — chỉ +0.0003 ROC-AUC, khoảng cách GBDT–Logistic không bị ước lượng thấp. — `tuning_gbdt_extended-4` **(Thủy)**
 
 ### 3.2 Ablation (bắt buộc)
@@ -102,7 +102,7 @@ Toàn bộ phần code thực nghiệm, kết quả và số liệu trong docs t
 - [x] Kiểm tra local accuracy: sai số max 5.1e-8 (GBDT), 7.1e-15 (Logistic). — `explain-4` **(Thủy)**
 - [x] Gộp SHAP theo biến gốc, lưu cả bản chưa gộp. — `explain-4` **(Thủy)**
 - [x] Chọn TP/TN/FP/FN (ID nhỏ nhất, seed 42) và 4 mẫu Logistic/GBDT bất đồng. — `explain-4` **(Thủy)**
-- [ ] Dependence plot cho `age`, `capital-gain`, `education-num`, `hours-per-week` (SHAP GBDT vs SHAP Logistic vs hình dạng EBM) — **code xong (Thủy), đang chờ artifact `analysis`**.
+- [x] Dependence plot 4 biến số: xác nhận `age` chữ U ngược, `capital-gain` dạng ngưỡng, `hours-per-week` bão hòa; `education-num` gần tuyến tính (mục 7.2 docs). — `analysis-7` **(Thủy)**
 
 ### 3.4 Tái hiện paper
 - [x] `experiments/reproduce_shap.py`: Shapley chính xác bằng liệt kê tập con; khớp KernelExplainer (Figure 4, sai số ~1e-16) và TreeExplainer (sai số ≤ 5.5e-8). — `reproduce_shap-5` **(Thủy)**
@@ -111,17 +111,17 @@ Toàn bộ phần code thực nghiệm, kết quả và số liệu trong docs t
 - [x] Điền bảng mục 6 trong docs (locator, số đọc từ hình, kết quả lần 1 và lần 2, chênh lệch). **(Thủy)**
 
 ### 3.5 Mở rộng / bonus (đã chọn cả 3)
-- [ ] EBM GAM (`tuning_ebm_gam.json`) và GA2M (`tuning_ebm_ga2m.json`), 3 seed, cùng fold với các mô hình khác — **code xong (Thủy), đang chờ artifact**.
-- [ ] Bootstrap 30 lần: độ ổn định xếp hạng SHAP (Spearman, Jaccard top-5) và hệ số (tần suất chọn, nhất quán dấu) — **code xong (Thủy), đang chờ artifact `stability`**.
-- [ ] Fairness theo `sex`/`race`: TPR/FPR/PPV/tỷ lệ chọn, cỡ mẫu, khoảng cách giữa nhóm (≥ 100 mẫu) — **code xong (Thủy), đang chờ artifact `analysis`**.
-- [ ] Ghim phiên bản `interpret-core` trong `requirements.txt` theo `env.json` sau lần chạy đầu.
+- [x] EBM GAM 0.9267 và GA2M 0.9272 ROC-AUC — ngang GBDT 0.9270 mà vẫn diễn giải trực tiếp được (mục 7.1 docs). — `tuning_ebm_gam-7`, `tuning_ebm_ga2m-7` **(Thủy)**
+- [x] Bootstrap 30 lần: Spearman xếp hạng ≥ 0.90, top-1 giữ nguyên 30/30; 34/81 hệ số ổn định hoàn toàn (mục 7.3 docs). — `stability-7` **(Thủy)**
+- [x] Fairness: GBDT/EBM thu hẹp chênh TPR theo `sex` (0.10 → 0.06–0.07); chênh theo `race` lớn nhưng nhóm nhỏ (mục 7.4 docs). — `analysis-7` **(Thủy)**
+- [x] Ghim `interpret-core==0.7.8` trong `requirements.txt`. **(Thủy)**
 
 ## Giai đoạn 4 — Phân tích & hoàn thiện (tuần 7–8)
 
 ### 4.1 Phân tích
 - [x] Điền bảng kết quả chính, bảng ablation, bảng SHAP trong docs từ artifact. **(Thủy)**
-- [ ] Viết thảo luận RQ2–RQ3: regularization, hệ số vs SHAP, giới hạn giải thích.
-- [ ] Viết thảo luận RQ1, hạn chế, kết luận; kiểm tra mọi con số truy được tới artifact.
+- [x] Viết thảo luận và kết luận RQ1–RQ3, hạn chế (mục 7.5 docs) — dùng làm khung cho báo cáo PDF. **(Thủy)**
+- [ ] Rà soát: mọi con số trong báo cáo truy được tới artifact.
 
 ### 4.2 Báo cáo PDF (8–12 trang, Overleaf/LaTeX)
 - [ ] a) Introduction — bài toán, ứng dụng, các hướng tiếp cận, lý do chọn.
@@ -133,8 +133,8 @@ Toàn bộ phần code thực nghiệm, kết quả và số liệu trong docs t
 - [ ] Đọc chéo, kiểm tra đạo văn/trích dẫn.
 
 ### 4.3 Mã nguồn & tái lập
-- [ ] Script chạy toàn bộ (đã có cơ chế `configs/ci_runs.json`; cần thêm hướng dẫn chạy cục bộ).
-- [ ] README: lệnh cài đặt, chạy, cấu trúc thư mục, nguồn code tham khảo và phần tự viết.
+- [x] Script chạy toàn bộ qua `configs/ci_runs.json` (CI) và bảng lệnh chạy cục bộ trong README mục 6.1. **(Thủy)**
+- [x] README: lệnh cài đặt, chạy từng thí nghiệm, nguồn mã, khai báo AI. **(Thủy)**
 - [ ] Một người **khác** người viết code chạy lại từ đầu theo README.
 
 ### 4.4 Trình bày

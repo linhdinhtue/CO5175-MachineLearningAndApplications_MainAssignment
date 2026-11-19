@@ -71,9 +71,36 @@ Tên A/B/C là vai trò dự kiến, cần thay bằng tên/MSSV và tỷ lệ �
 
 ## 6. Tái lập và sản phẩm
 
-Python 3.10+, scikit-learn, SHAP; giữ dependencies trong `requirements.txt`, config từng thí nghiệm trong `configs/`, mã trong `src/`, kết quả trong `results/`, báo cáo trong `reports/`. README sẽ bổ sung lệnh cài đặt và chạy toàn bộ khi có code. Dùng Git, commit theo mốc thực tế; ghi rõ code thư viện, code tham khảo và phần nhóm tự viết/sửa.
+Python 3.10+, scikit-learn, SHAP; giữ dependencies trong `requirements.txt`, config từng thí nghiệm trong `configs/`, mã trong `src/`, kết quả trong `results/`, báo cáo trong `reports/`. Dùng Git, commit theo mốc thực tế; ghi rõ code thư viện, code tham khảo và phần nhóm tự viết/sửa.
 
-Sản phẩm cuối theo mục 5 của đề: báo cáo PDF khoảng 8–12 trang chưa kể phụ lục, slide hoặc video, mã nguồn và README. **Khai báo AI:** OpenAI Codex hỗ trợ soạn proposal và khung phân tích; nhóm phải kiểm tra tài liệu, xác thực kết quả, hiểu công thức/code và cập nhật khai báo theo sử dụng thực tế.
+### 6.1. Cách chạy lại
+
+**Cài đặt cục bộ** (Python 3.10; dữ liệu Adult tự tải từ UCI ở lần chạy đầu vào `data/raw/`):
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+**Chạy một thí nghiệm:** `python -m experiments.<task> --config configs/<tên>.json`. Kết quả ghi vào `results/<tên config>/` (kèm `config.json` và `env.json` gồm phiên bản thư viện, CPU, RAM).
+
+| Bước | Lệnh | Nội dung |
+| --- | --- | --- |
+| Dữ liệu | `python -m experiments.data_check --config configs/data_check.json` | Checksum, số dòng, nhãn, missing |
+| Baseline | `python -m experiments.baseline --config configs/baseline.json` | Logistic L2 `C=1`, 5-fold × 3 seed |
+| Tuning | `python -m experiments.tuning --config configs/tuning_logistic_l1.json` (tương tự `_l2`, `_elasticnet`, `tuning_gbdt`, `tuning_gbdt_extended`, `tuning_ebm_gam`, `tuning_ebm_ga2m`) | GridSearchCV theo ROC-AUC, refit, test |
+| Ablation | `python -m experiments.ablation --config configs/ablation.json` | L1/L2/EN tại `C=1` |
+| SHAP | `python -m experiments.explain --config configs/explain.json` | TreeExplainer/LinearExplainer, kiểm tra tính cộng, hình |
+| Tái hiện paper | `python -m experiments.reproduce_shap --config configs/reproduce_shap_v2.json` | Figure 3 và Figure 4 của Lundberg & Lee (2017) |
+| Ổn định giải thích | `python -m experiments.stability --config configs/stability.json` | Bootstrap 30 lần trên train |
+| Phân tích bổ sung | `python -m experiments.analysis --config configs/analysis.json` | KTC bootstrap test, fairness, dependence plot |
+
+**Chạy trên GitHub Actions** (cách nhóm đã dùng, runner Ubuntu 4 CPU): workflow `.github/workflows/run-experiment.yml` tự chạy khi push lên nhánh `Thuy-branch`; danh sách thí nghiệm chạy song song lấy từ `configs/ci_runs.json`; mỗi thí nghiệm tạo một artifact `<tên config>-<số lần chạy>`. Tổng thời gian toàn bộ thí nghiệm trên runner 4 CPU khoảng 2–3 giờ (lâu nhất: tuning EBM và Logistic).
+
+**Nguồn mã:** toàn bộ mã trong `src/` và `experiments/` do nhóm tự viết; chỉ gọi API của thư viện `scikit-learn`, `shap`, `lime`, `interpret-core`. Shapley chính xác và Shapley sampling trong `experiments/reproduce_shap.py` do nhóm tự cài đặt theo công thức của paper.
+
+Sản phẩm cuối theo mục 5 của đề: báo cáo PDF khoảng 8–12 trang chưa kể phụ lục, slide hoặc video, mã nguồn và README. **Khai báo AI:** OpenAI Codex hỗ trợ soạn proposal và khung phân tích; GitHub Copilot hỗ trợ viết mã thực nghiệm, workflow GitHub Actions và tổng hợp số liệu vào `docs/`. Nhóm phải kiểm tra tài liệu, xác thực kết quả, hiểu công thức/code và cập nhật khai báo theo sử dụng thực tế.
 
 ## Tài liệu
 

@@ -12,7 +12,7 @@ fonttools==4.65.0
 formulaic==1.2.2
 ImageIO==2.38.0
 interface_meta==2.0.1
-interpret-core
+interpret-core==0.7.8
 ipykernel==7.3.0
 ipython==8.39.0
 jedi==0.20.1
