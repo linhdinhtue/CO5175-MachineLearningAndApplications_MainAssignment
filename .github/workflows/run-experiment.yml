@@ -1,6 +1,7 @@
+
 name: Run experiment
 
-on:
+"on":
   workflow_dispatch:
     inputs:
       task:
@@ -23,6 +24,7 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+
     steps:
       - uses: actions/checkout@v4
 
@@ -45,7 +47,9 @@ jobs:
           TASK: ${{ inputs.task }}
           CONFIG: ${{ inputs.config }}
         run: |
-          if [ -z "$CONFIG" ]; then CONFIG="configs/${TASK}.json"; fi
+          if [ -z "$CONFIG" ]; then
+            CONFIG="configs/${TASK}.json"
+          fi
           python -m "experiments.${TASK}" --config "$CONFIG"
 
       - name: Upload results
