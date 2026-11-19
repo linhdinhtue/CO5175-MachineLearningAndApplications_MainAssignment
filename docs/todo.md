@@ -3,6 +3,16 @@
 > Bám theo quy trình 6 bước (mục 4.1), yêu cầu thực nghiệm/mã nguồn (4.2–4.4), sản phẩm nộp (5.1) và rubric (5.2) trong [00_ML-Assignment-Topics.md](../00_ML-Assignment-Topics.md).
 > Đánh dấu `[x]` khi xong, ghi kèm link commit/tệp làm bằng chứng.
 
+## Tiến độ hiện tại (cập nhật 2026-11-19)
+
+| Giai đoạn | Trạng thái | Bằng chứng (artifact GitHub Actions) |
+| --- | --- | --- |
+| 0. Thiết lập | Hạ tầng CI xong; còn phân quyền, chọn hình thức trình bày | `.github/workflows/run-experiment.yml`, `configs/ci_runs.json` |
+| 1. Proposal | Chưa nộp; đã chốt hình paper cần tái hiện | — |
+| 2. Dữ liệu & baseline | Xong phần code/kết quả; còn EDA notebook, lý thuyết, báo cáo tiến độ | `data_check-1`, `baseline-1` |
+| 3. Thực nghiệm | Tuning, ablation, SHAP xong; tái hiện paper đang chạy; chưa làm bonus | `tuning_*-3`, `ablation-3`, `tuning_gbdt_extended-4`, `explain-4` |
+| 4. Hoàn thiện | Đã điền số liệu vào docs; chưa viết báo cáo/slide | `docs/analysis_and_discussion.md` |
+
 ## Phân vai (đề xuất — nhóm xác nhận lại)
 
 | Vai trò | Thành viên | Trách nhiệm chính |
@@ -18,8 +28,9 @@ Quy ước: mỗi người tự commit phần mình (giảng viên có thể xem
 ## Giai đoạn 0 — Thiết lập chung (đầu tuần 1)
 
 - [ ] **[L]** Thêm tất cả thành viên làm collaborator trên GitHub; thống nhất quy ước branch/commit (`feat:`, `fix:`, `docs:`, `exp:`).
-- [ ] **[L]** Cập nhật `.gitignore`: bỏ qua `data/raw/`, `results/**/*.pkl`, `.venv/`, checkpoint notebook.
-- [ ] **[Cả nhóm]** Tạo môi trường Python 3.10+ (`python -m venv .venv`), `pip install -r requirements.txt`, xác nhận import được `sklearn`, `shap`, `pandas`.
+- [x] **[L]** Cập nhật `.gitignore`: bỏ qua `data/raw/`, `results/*`.
+- [x] **[L]** Chạy thí nghiệm trên GitHub Actions (nhánh `Thuy-branch`, tự chạy khi push; danh sách chạy trong `configs/ci_runs.json`, kết quả là artifact).
+- [ ] **[Cả nhóm]** Tạo môi trường Python 3.10+ cục bộ (không bắt buộc vì đã chạy trên CI).
 - [ ] **[R]** Rút gọn `requirements.txt` còn các gói thực sự dùng; bổ sung `interpret` nếu làm phần EBM.
 - [ ] **[Cả nhóm]** Chọn hình thức trình bày: A (thuyết trình 20' + Q&A) hoặc B (video 10').
 
@@ -27,7 +38,7 @@ Quy ước: mỗi người tự commit phần mình (giảng viên có thể xem
 
 - [ ] **[L]** Rút gọn proposal xuống **1–2 trang** (đề yêu cầu); chuyển chi tiết sang `docs/analysis_and_discussion.md`.
 - [ ] **[L]** Thay A/B/C bằng tên + MSSV trong bảng tiến độ của README.
-- [ ] **[T]** Đọc nhanh Lundberg & Lee (2017), chốt **hình/bảng/thí nghiệm gốc** sẽ đối chiếu khi tái hiện (ghi locator: Figure/Section).
+- [x] **[T]** Đọc Lundberg & Lee (2017), chốt **hình/thí nghiệm gốc**: Figure 3 (mục 5.1) và Figure 4 (mục 5.2) — ghi trong mục 6 của docs.
 - [ ] **[T]** Bổ sung tài liệu InterpretML (Nori et al., 2019) vào danh mục tham khảo.
 - [ ] **[Cả nhóm]** Chốt hướng **bonus** (bước 6): ví dụ EBM/GAM, bootstrap ổn định giải thích, hoặc fairness theo nhóm.
 - [ ] **[L]** Xuất proposal ra PDF và nộp qua LMS.
@@ -35,17 +46,17 @@ Quy ước: mỗi người tự commit phần mình (giảng viên có thể xem
 ## Giai đoạn 2 — Tài liệu & baseline (tuần 2–3)
 
 ### 2.1 Dữ liệu
-- [x] **[R]** Viết `src/data.py`: tải Adult (`adult.data`, `adult.test`) từ UCI, lưu vào `data/raw/`.
-- [x] **[R]** Ghi `data/README` hoặc `results/data_meta.json`: URL nguồn, SHA-256, số dòng, tỷ lệ nhãn train/test.
-- [x] **[R]** Chuẩn hóa nhãn (`>50K.` → `>50K`), `?` → missing, quy tắc xử lý bản ghi trùng.
+- [x] **[R]** `src/data.py`: tải Adult (`adult.data`, `adult.test`) từ UCI, lưu vào `data/raw/`. — `data_check-1`
+- [x] **[R]** `data_meta.json`: URL nguồn, SHA-256, số dòng, tỷ lệ nhãn train/test. — `data_check-1`
+- [x] **[R]** Chuẩn hóa nhãn (`>50K.` → `>50K`), `?` → missing, giữ bản ghi trùng (24 train / 5 test). — `data_check-1`
 - [ ] **[R]** Notebook `notebooks/view_data.ipynb`: EDA cơ bản (phân bố nhãn, missing, biến số/phân loại, tương quan).
 
 ### 2.2 Pipeline & baseline
 - [x] **[R]** `src/preprocess.py`: `ColumnTransformer` (median/mode impute, one-hot, `StandardScaler` cho Logistic); bỏ `fnlwgt`, `education`.
-- [x] **[R]** `src/cv.py`: tạo Stratified 5-fold cố định theo seed {42, 2026, 5175}, lưu chỉ số fold.
+- [x] **[R]** Stratified 5-fold theo seed {42, 2026, 5175} (trong `experiments/baseline.py`, `experiments/tuning.py`).
 - [x] **[R]** `src/metrics.py`: ROC-AUC, AP, F1, balanced accuracy, accuracy, log-loss (ngưỡng 0.5).
-- [x] **[R]** `configs/baseline.yaml` + `experiments/run_baseline.py`: Logistic L2 `C=1`, 3 seed.
-- [x] **[R]** Ghi metadata máy (CPU, RAM, OS, phiên bản thư viện) vào `results/env.json`.
+- [x] **[R]** `configs/baseline.json` + `experiments/baseline.py`: Logistic L2 `C=1`, 3 seed — test ROC-AUC 0.9033. — `baseline-1`
+- [x] **[R]** Ghi metadata máy (CPU, RAM, OS, phiên bản thư viện) vào `env.json` của mỗi artifact.
 
 ### 2.3 Lý thuyết
 - [ ] **[T]** Hệ thống hóa các hướng tiếp cận (mô hình nội tại vs hậu nghiệm: Lasso, Elastic Net, GAM/EBM, LIME, SHAP) kèm ưu/nhược điểm.
@@ -55,27 +66,28 @@ Quy ước: mỗi người tự commit phần mình (giảng viên có thể xem
 ## Giai đoạn 3 — Tái hiện & thực nghiệm (tuần 4–6)
 
 ### 3.1 Tuning mô hình chính
-- [x] **[R]** `configs/tuning_*.yaml` cho L1, L2, Elastic Net, GBDT (12 cấu hình mỗi biến thể, như README).
-- [x] **[R]** `experiments/run_tuning.py`: `GridSearchCV` theo ROC-AUC, refit toàn train, đánh giá test; lưu `cv_results_`, tham số tốt nhất, dự đoán test, thời gian tuning/refit/inference.
+- [x] **[R]** `configs/tuning_*.json` cho L1, L2, Elastic Net, GBDT (12 cấu hình mỗi biến thể). — `tuning_*-3`
+- [x] **[R]** `experiments/tuning.py`: `GridSearchCV` theo ROC-AUC, refit toàn train, đánh giá test; lưu `cv_results_`, tham số tốt nhất, dự đoán test, thời gian tuning/refit/inference. — `tuning_*-3`
 - [x] **[R]** Ghi lại convergence warning và cấu hình lỗi (không loại âm thầm).
 - [x] **[R]** Đếm kích thước mô hình: hệ số + intercept (Logistic); số cây/nút/lá (GBDT); dung lượng file model.
 - [ ] **[R]** `src/aggregate.py`: tổng hợp mean ± sample std qua 3 seed (đã có trong `tuning.py`), còn thiếu chênh lệch theo cặp Δ_s.
-- [ ] **[R]** Phân tích độ nhạy GBDT với lưới mở rộng (`tuning_gbdt_extended.json`) — bổ sung vì cấu hình tốt nhất nằm ở góc lưới.
+- [x] **[R]** Phân tích độ nhạy GBDT với lưới mở rộng — chỉ +0.0003 ROC-AUC, khoảng cách GBDT–Logistic không bị ước lượng thấp. — `tuning_gbdt_extended-4`
 
 ### 3.2 Ablation (bắt buộc)
-- [x] **[R]** `configs/ablation.yaml` + `experiments/run_ablation.py`: L1/L2/EN tại `C=1`, `l1_ratio=0.5`; đo hiệu năng, số hệ số |β|>1e-6, refit time.
+- [x] **[R]** `configs/ablation.json` + `experiments/ablation.py`: L1/L2/EN tại `C=1`, `l1_ratio=0.5`; đo hiệu năng, số hệ số |β|>1e-6, refit time. — `ablation-3`
 
 ### 3.3 Giải thích
-- [ ] **[T]** `src/explain_linear.py`: bảng hệ số, odds ratio, nhóm tham chiếu, tỷ lệ chọn và tỷ lệ cùng dấu qua seed.
-- [ ] **[T]** `src/explain_shap.py`: TreeExplainer, 100 background train, ≤500 mẫu test cố định (lưu ID); beeswarm, bar, waterfall.
-- [ ] **[T]** Kiểm tra local accuracy: `|f(x) − (φ0 + Σφj)|` trên toàn bộ mẫu giải thích; ghi sai số max.
-- [ ] **[T]** Gộp SHAP theo biến gốc (cộng các cột one-hot), lưu cả bản chưa gộp.
-- [ ] **[T]** Chọn TP/TN/FP/FN theo quy tắc cố định (ID nhỏ nhất, seed 42) và các mẫu Logistic/GBDT bất đồng.
+- [x] **[T]** Bảng hệ số, odds ratio, nhóm tham chiếu (`features_seed*.csv`, `reference_categories.json`); tỷ lệ chọn và cùng dấu qua seed (mục 4.1 docs). — `tuning_*-3`
+- [x] **[T]** `experiments/explain.py`: TreeExplainer (GBDT) + LinearExplainer (Elastic Net), 100 background, 500 mẫu test cố định (lưu ID); beeswarm, bar, waterfall. — `explain-4`
+- [x] **[T]** Kiểm tra local accuracy: sai số max 5.1e-8 (GBDT), 7.1e-15 (Logistic). — `explain-4`
+- [x] **[T]** Gộp SHAP theo biến gốc, lưu cả bản chưa gộp. — `explain-4`
+- [x] **[T]** Chọn TP/TN/FP/FN (ID nhỏ nhất, seed 42) và 4 mẫu Logistic/GBDT bất đồng. — `explain-4`
+- [ ] **[T]** Dependence plot cho `capital-gain` và `age` để xác nhận giả thuyết phi tuyến.
 
 ### 3.4 Tái hiện paper
-- [ ] **[L]** Thí nghiệm nhỏ: tính Shapley chính xác bằng liệt kê tập con, so với KernelExplainer/TreeExplainer.
-- [ ] **[L]** Tái hiện hình/bảng đã chốt ở Giai đoạn 1; ghi số liệu paper vs nhóm và giải thích chênh lệch.
-- [ ] **[L]** Điền bảng mục 6 trong `docs/analysis_and_discussion.md`.
+- [ ] **[L]** `experiments/reproduce_shap.py`: Shapley chính xác bằng liệt kê tập con, so với KernelExplainer/TreeExplainer — **code xong, đang chờ artifact `reproduce_shap`**.
+- [ ] **[L]** Tái hiện Figure 3 (Kernel SHAP vs Shapley sampling vs LIME) và Figure 4 (ví dụ đồ chơi) — **đang chờ artifact**.
+- [ ] **[L]** Điền bảng mục 6 trong docs — đã ghi locator và số đọc từ hình; còn kết quả tái hiện.
 
 ### 3.5 Mở rộng / bonus (chọn ít nhất một)
 - [ ] **[T]** EBM (`interpret`) như mô hình glass-box thứ hai; so với Logistic và GBDT.
@@ -85,7 +97,7 @@ Quy ước: mỗi người tự commit phần mình (giảng viên có thể xem
 ## Giai đoạn 4 — Phân tích & hoàn thiện (tuần 7–8)
 
 ### 4.1 Phân tích
-- [ ] **[R]** Điền bảng kết quả chính và bảng ablation trong docs từ `results/`.
+- [x] **[R]** Điền bảng kết quả chính, bảng ablation, bảng SHAP trong docs từ artifact.
 - [ ] **[T]** Viết thảo luận RQ2–RQ3: regularization, hệ số vs SHAP, giới hạn giải thích.
 - [ ] **[L]** Viết thảo luận RQ1, hạn chế, kết luận; kiểm tra mọi con số truy được tới file trong `results/`.
 

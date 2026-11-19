@@ -86,6 +86,7 @@ Không có lần fit lỗi, không có convergence warning khi refit, không mô
 - L1 và Elastic Net loại 16–25 hệ số mà không mất hiệu năng. Số hệ số của L1 thay đổi giữa seed (65 vs 56) do `C` được chọn khác nhau — cần kiểm tra biến nào bị loại.
 - Độ biến thiên giữa seed trên test gần 0 vì các mô hình gần như tất định (Logistic lồi; GBDT không dùng `subsample`/`max_features`), seed chỉ đổi cách chia fold. Mean ± std qua seed vì vậy không phản ánh bất định lấy mẫu; dùng std giữa fold CV hoặc bootstrap test nếu cần khoảng tin cậy.
 - **Hạn chế cần báo cáo:** cấu hình GBDT tốt nhất nằm ở **góc lưới** (giá trị lớn nhất của cả 3 tham số), CV AUC còn tăng đơn điệu theo độ phức tạp. Do đó khoảng cách GBDT–Logistic có thể đang bị ước lượng thấp. Phân tích độ nhạy với lưới mở rộng (`tuning_gbdt_extended.json`) được thêm **sau khi đã xem kết quả test**, nên phải trình bày là phân tích bổ sung, không thay bảng chính.
+  - **Kết quả lưới mở rộng** (artifact `tuning_gbdt_extended-4`; `n_estimators` ∈ {200, 400}, `learning_rate` ∈ {0.1, 0.2}, `max_depth` ∈ {4, 5, 6}): cả 3 seed chọn `n_estimators`=400, `learning_rate`=0.1, `max_depth`=4; CV ROC-AUC 0.9293 (+0.0008 so với lưới chính). Test ROC-AUC 0.9273 ± 0.0000, AP 0.8255, F1 0.7070, log-loss 0.2768 — chỉ tăng ~0.0003 ROC-AUC trong khi refit chậm gấp đôi (18.9 s) và mô hình lớn gấp đôi (11 646 nút). Các hướng sâu hơn (`max_depth` 5–6) hoặc học nhanh hơn (`learning_rate` 0.2) đều làm CV giảm. Kết luận: khoảng cách GBDT–Logistic ở bảng chính **không bị ước lượng thấp đáng kể**.
 - Logistic “tốt nhất theo validation” (CV ROC-AUC trung bình 3 seed): Elastic Net 0.90534 > L1 0.90533 > L2 0.90530 — chênh lệch không đáng kể; Elastic Net (`C`=1, `l1_ratio`=0.8) được dùng làm đại diện Logistic cho phần SHAP.
 
 Với metric \(m_s\) ở seed \(s\):
@@ -103,11 +104,33 @@ Accuracy mô tả tỷ lệ dự đoán đúng nhưng có thể che khuất sai 
 
 Lưu confusion matrix, precision/recall từng lớp và ID quan sát. Với mỗi mô hình, chọn tối đa một TP, TN, FP, FN bằng quy tắc cố định: ID nhỏ nhất trong mỗi nhóm ở seed 42; nếu nhóm rỗng thì ghi rõ. Phân tích các trường hợp này mang tính minh họa, không đại diện cho toàn bộ test. Bổ sung các quan sát mà Logistic và GBDT dự đoán khác nhau để khảo sát giả thuyết về tương tác/phi tuyến.
 
+**Kết quả (artifact `explain-4`, seed 42; GBDT 200/0.1/4 và Elastic Net `C`=1, `l1_ratio`=0.8):** theo quy tắc ID nhỏ nhất, hai mô hình chọn trùng dòng: TN = dòng 0, FN = dòng 2, TP = dòng 3, FP = dòng 11. Các dòng bất đồng:
+
+| Dòng | Nhãn thật | P(>50K) GBDT | P(>50K) Logistic | Đóng góp `capital-gain` (log-odds) GBDT / Logistic |
+| --- | --- | --- | --- | --- |
+| 14 | 1 | 0.81 | 0.48 | +1.53 / +0.67 |
+| 80 | 0 | 0.52 | 0.37 | −0.33 / −0.30 |
+| 47 | 0 | 0.15 | 0.70 | **−2.24 / +0.92** |
+| 220 | 0 | 0.48 | 0.53 | −0.34 / − (không nằm trong top 4) |
+
+Dòng 14 và 47 cho thấy `capital-gain` là nguồn bất đồng chính: Logistic buộc ảnh hưởng đơn điệu tuyến tính theo giá trị chuẩn hóa, còn GBDT học được hiệu ứng ngưỡng (cùng là giá trị dương nhưng đóng góp có thể ngược dấu). Đây là bằng chứng minh họa cho giả thuyết phi tuyến, chưa phải chứng minh; cần bổ sung dependence plot của `capital-gain` để xác nhận.
+
 ## 4. Diễn giải hệ số và SHAP
 
 ### 4.1. Bảng hệ số cần xuất
 
 Xuất tên biến sau encoding, đơn vị/nhóm tham chiếu, hệ số từng seed, odds ratio, tỷ lệ được chọn và tỷ lệ cùng dấu. Dùng ngưỡng \(|\beta|>10^{-6}\) để đếm hệ số hoạt động. Tách biến số và biến dummy khi so sánh độ lớn; không xem hệ số lớn nhất là đặc trưng quan trọng nhất một cách tự động. Hệ số có regularization không đi kèm suy luận p-value cổ điển nếu chưa có phương pháp phù hợp.
+
+**Độ ổn định qua 3 seed (từ `features_seed*.csv` của các artifact tuning):**
+
+| Biến thể | Chọn 3/3 seed | Chọn 2/3 | Không bao giờ chọn | Cùng dấu ở cả 3 seed |
+| --- | --- | --- | --- | --- |
+| L1 | 56 | 9 | 16 | 72 / 81 |
+| Elastic Net | 64 | 0 | 17 | 81 / 81 |
+| L2 | 81 | 0 | 0 | 77 / 81 |
+
+- 16 biến L1 không bao giờ chọn đều là dummy hiếm: `workclass_Never-worked`, `occupation_Armed-Forces`, `race_Other` và 13 quốc gia. 9 biến không ổn định (8 quốc gia + `marital-status_Married-spouse-absent`) xuất hiện/biến mất do seed 5175 chọn `C` nhỏ hơn. Không có biến số nào bị loại.
+- L2 đổi dấu ở 4 hệ số gần 0 khi `C` thay đổi (0.19 vs 0.53): dấu của các hệ số nhỏ không nên được diễn giải.
 
 ### 4.2. SHAP toàn cục và cục bộ
 
@@ -122,6 +145,33 @@ Lưu rõ \(f\) là raw score hay xác suất, lớp đang giải thích, backgro
 Trên tối đa 500 mẫu test cố định, vẽ beeswarm và bar plot mean absolute SHAP; waterfall cho các trường hợp ở mục 3.2. Mẫu dùng giải thích phải lưu ID và phân bố nhãn. Mean absolute SHAP cho biết độ lớn đóng góp trung bình, không biểu thị dấu ảnh hưởng.
 
 Để báo cáo theo biến gốc, cộng SHAP của các cột one-hot thuộc cùng biến cho từng quan sát rồi mới lấy trung bình trị tuyệt đối. Lưu cả attribution chưa gộp; đây là phép tổng hợp để báo cáo, không mặc định tương đương với việc tính Shapley lại trên một trò chơi có biến được gộp. Không so sánh trực tiếp trị tuyệt đối hệ số Logistic với trị tuyệt đối SHAP vì chúng khác định nghĩa và đơn vị.
+
+**Kết quả đo (artifact `explain-4`):** background 100 dòng train, 500 dòng test ngẫu nhiên (388 âm / 112 dương), seed 42; giải thích raw log-odds của lớp `>50K`. ID background/mẫu lưu trong `explain_meta.json`.
+
+- **Kiểm tra tính cộng (local accuracy):** sai số tuyệt đối lớn nhất giữa \(\phi_0+\sum_j\phi_j\) và `decision_function` là 5.1e-8 (GBDT, TreeExplainer interventional) và 7.1e-15 (Logistic, LinearExplainer) — đạt ở mức sai số số học.
+- **Chi phí:** SHAP cho 508 dòng mất 0.46 s (GBDT) và 0.006 s (Logistic).
+
+| Biến gốc | Mean \|SHAP\| GBDT | Hạng GBDT | Mean \|SHAP\| Logistic | Hạng Logistic |
+| --- | --- | --- | --- | --- |
+| marital-status | 0.926 | 1 | 1.116 | 1 |
+| age | 0.623 | 2 | 0.260 | 7 |
+| capital-gain | 0.583 | 3 | 0.787 | 2 |
+| education-num | 0.403 | 4 | 0.561 | 3 |
+| hours-per-week | 0.305 | 5 | 0.257 | 8 |
+| occupation | 0.269 | 6 | 0.375 | 5 |
+| sex | 0.173 | 7 | 0.380 | 4 |
+| relationship | 0.155 | 8 | 0.305 | 6 |
+| workclass | 0.063 | 9 | 0.086 | 9 |
+| capital-loss | 0.058 | 10 | 0.075 | 10 |
+| race | 0.042 | 11 | 0.053 | 11 |
+| native-country | 0.030 | 12 | 0.052 | 12 |
+
+Nhận xét (RQ3):
+
+- Hai mô hình đồng thuận về biến quan trọng nhất (`marital-status`) và 4 biến ít quan trọng nhất. Khác biệt lớn nhất: GBDT dựa vào `age` nhiều hơn (hạng 2 so với 7) — beeswarm cho thấy ảnh hưởng của tuổi không đơn điệu, điều mà một hệ số tuyến tính không biểu diễn được. Logistic dựa vào `sex` và `relationship` nhiều hơn.
+- Gom theo biến gốc có thể làm giảm độ lớn: với Logistic, `workclass_Private` riêng lẻ có mean |SHAP| 0.203 nhưng cả nhóm `workclass` chỉ 0.086, vì đóng góp của các dummy trong cùng một dòng triệt tiêu nhau. Với Logistic + one-hot có nhóm tham chiếu, SHAP của dummy là \(\beta_j(x_j-\bar x_j^{bg})\), nên phụ thuộc vào phân bố background chứ không chỉ vào hệ số.
+- `capital-gain` có phân bố SHAP rất lệch ở GBDT (đa số ≈ −0.4, một số ít lên tới +6): mean |SHAP| được quyết định bởi số ít quan sát có capital-gain cao.
+- Hình: `plots/beeswarm_*.png`, `plots/bar_*.png`, `plots/bar_grouped_*.png`, `plots/waterfall_*.png` trong artifact.
 
 Khi hệ số và SHAP ưu tiên các biến khác nhau, kiểm tra scaling, tương quan, nhóm tham chiếu, phân bố dữ liệu và khả năng phi tuyến. Sự khác nhau không tự chứng minh một phương pháp giải thích sai.
 
@@ -152,10 +202,10 @@ Ghi số hệ số + intercept của Logistic; số cây/nút/lá và giá trị
 
 | Nội dung đối chiếu | Trạng thái / bằng chứng cần có |
 | --- | --- |
-| Hình/bảng/thí nghiệm chính trong paper | Chưa chốt; cần ghi locator, metric và thiết lập gốc |
-| Dữ liệu, mô hình, cách tính attribution | Cần ghi phiên bản và các giả định so với paper |
-| Số liệu công bố | Chưa trích; không dùng số ước lượng từ trí nhớ |
-| Kết quả tái hiện, chênh lệch | Chưa chạy; báo cáo cùng đơn vị và protocol |
+| Hình/bảng/thí nghiệm chính trong paper | **Đã chốt** (đọc từ mã nguồn LaTeX arXiv 1705.07874v2): **Figure 3** (mục 5.1 *Computational Efficiency*) — so sánh Kernel SHAP (debiased lasso), Shapley sampling values và LIME; ước lượng attribution của một đặc trưng theo số lần gọi mô hình; 200 lần lặp mỗi cỡ mẫu, vẽ percentile 10–90. (A) cây quyết định dùng cả 10 đặc trưng; (B) cây quyết định chỉ dùng 3 trong 100 đặc trưng; mỗi trường hợp giải thích một input. Bổ sung **Figure 4** (mục 5.2): hai ví dụ đồ chơi có thể tính Shapley chính xác — sickness score (2 khi có cả sốt và ho, 5 khi chỉ có một, 0 khi không có) và chia tiền theo max (5, 4, 0 câu đúng → \$5). |
+| Dữ liệu, mô hình, cách tính attribution | Paper **không** nêu phân phối dữ liệu, độ sâu cây, background, input được giải thích hay đặc trưng được vẽ → nhóm phải tự chọn và ghi rõ là giả định. Attribution dùng giả định độc lập đặc trưng (Eq. 11 trong paper), tương ứng `interventional` trong thư viện. |
+| Số liệu công bố | Figure 3 chỉ là đồ thị → so sánh **định tính**. Đọc từ hình: giá trị Shapley thật ≈ 0.33 ở cả (A) và (B); trong khoảng 200–1 000 lần gọi mô hình, dải 10–90% của Kernel SHAP hẹp nhất, Shapley sampling rộng nhất (ở (B) trung vị nhảy giữa 0, 0.25, 0.5), LIME ổn định nhưng hội tụ về giá trị khác (≈ 0.13 ở (A), ≈ 0.17 ở (B)). Figure 4 (đọc từ hình, xấp xỉ): sickness — Human = SHAP = (1, 1, 0) cho (Fever, Cough, Congestion), LIME ≈ (−1.17, −1.17, −0.07); max profit — Human = SHAP = (3, 2, 0), LIME ≈ (1.93, 0.93, −0.03), DeepLIFT gốc = (5, 0, 0). |
+| Kết quả tái hiện, chênh lệch | Chưa chạy |
 | Thực nghiệm GBDT trên Adult | Ứng dụng phương pháp; không gọi là tái hiện benchmark gốc |
 
 Với bài toán nhỏ, có thể tính tổng Shapley bằng liệt kê tập con dưới cùng định nghĩa giá trị tập con và background, rồi đo sai số so với explainer. Đây là kiểm tra triển khai bổ sung. Chênh lệch số liệu paper chỉ có ý nghĩa khi metric và thiết lập tương thích; nếu khác dataset thì phân tích định tính và nói rõ không so trực tiếp.

@@ -141,9 +141,11 @@ def main() -> None:
         save_plot(out / "plots" / f"bar_grouped_{name}.png")
 
         pos_of = {rid: i for i, rid in enumerate(explain_idx)}
-        for case, rid in cases.dropna(subset=["row"])[["case", "row"]].itertuples(index=False):
+        # several case labels can point to the same row; draw each row once
+        labels = cases.dropna(subset=["row"]).groupby("row", sort=True)["case"].agg("+".join)
+        for rid, label in labels.items():
             shap.plots.waterfall(expl[pos_of[int(rid)]], max_display=cfg["max_display"], show=False)
-            save_plot(out / "plots" / f"waterfall_{name}_{case}_row{int(rid)}.png")
+            save_plot(out / "plots" / f"waterfall_{name}_row{int(rid)}_{label}.png")
 
     imp = pd.DataFrame(grouped_importance)
     imp.columns = [f"mean_abs_shap_{c}" for c in imp.columns]
