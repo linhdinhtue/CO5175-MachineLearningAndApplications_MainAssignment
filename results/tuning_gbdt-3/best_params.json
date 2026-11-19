@@ -1,0 +1,17 @@
+{
+  "42": {
+    "learning_rate": 0.1,
+    "max_depth": 4,
+    "n_estimators": 200
+  },
+  "2026": {
+    "learning_rate": 0.1,
+    "max_depth": 4,
+    "n_estimators": 200
+  },
+  "5175": {
+    "learning_rate": 0.1,
+    "max_depth": 4,
+    "n_estimators": 200
+  }
+}
