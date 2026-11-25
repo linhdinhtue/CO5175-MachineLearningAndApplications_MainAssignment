@@ -1,0 +1,98 @@
+
+name: Run experiment
+
+"on":
+  # push trigger works on non-default branches, so main does not need this file
+  push:
+    branches:
+      - Thuy-branch
+    paths:
+      - "src/**"
+      - "experiments/**"
+      - "configs/**"
+      - "requirements.txt"
+      - ".github/workflows/run-experiment.yml"
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Module trong experiments/ (vd: data_check, baseline, tuning, ablation)"
+        required: true
+        default: baseline
+      config:
+        description: "Đường dẫn config (để trống = configs/<task>.json)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+# each web-UI file edit is a commit; keep only the latest run
+concurrency:
+  group: run-experiment-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: m
+        env:
+          EVENT: ${{ github.event_name }}
+          TASK: ${{ inputs.task }}
+          CONFIG: ${{ inputs.config }}
+        # push: runs listed in configs/ci_runs.json; manual run: the chosen task only
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            if [ -z "$CONFIG" ]; then CONFIG="configs/${TASK}.json"; fi
+            MATRIX=$(jq -cn --arg t "$TASK" --arg c "$CONFIG" '[{task:$t, config:$c}]')
+          else
+            MATRIX=$(jq -c '.runs' configs/ci_runs.json)
+          fi
+          MATRIX=$(echo "$MATRIX" | jq -c 'map(. + {name: (.config | split("/") | last | rtrimstr(".json"))})')
+          echo "$MATRIX"
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+  run:
+    needs: plan
+    if: needs.plan.outputs.matrix != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    name: ${{ matrix.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Cache Adult dataset
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: adult-raw-v1
+
+      - name: Run ${{ matrix.task }}
+        env:
+          TASK: ${{ matrix.task }}
+          CONFIG: ${{ matrix.config }}
+        run: python -m "experiments.${TASK}" --config "$CONFIG"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}-${{ github.run_number }}
+          path: results/${{ matrix.name }}/
+          if-no-files-found: warn

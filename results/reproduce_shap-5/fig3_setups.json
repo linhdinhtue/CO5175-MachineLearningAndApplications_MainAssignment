@@ -1,0 +1,52 @@
+{
+  "dense": {
+    "n_features": 10,
+    "used_features": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "tree_depth": 8,
+    "tree_leaves": 238,
+    "explained_feature": 7,
+    "true_shapley": 2.0899527740512167,
+    "f_x": 0.03854013541696373,
+    "f_ref": 0.5414557535351345,
+    "local_accuracy_error": 2.5118795932144167e-15,
+    "tree_explainer_max_abs_diff": 5.483269149841874e-08,
+    "seconds": {
+      "kernel_shap": 19.15932917400005,
+      "shapley_sampling": 4.5468236010000425,
+      "lime": 8.161919167999855
+    }
+  },
+  "sparse": {
+    "n_features": 100,
+    "used_features": [
+      0,
+      1,
+      2,
+      61
+    ],
+    "tree_depth": 3,
+    "tree_leaves": 5,
+    "explained_feature": 0,
+    "true_shapley": 0.3333333333333333,
+    "f_x": 1.0,
+    "f_ref": 0.0,
+    "local_accuracy_error": 0.0,
+    "tree_explainer_max_abs_diff": 9.934107481068821e-09,
+    "seconds": {
+      "kernel_shap": 199.56271972200037,
+      "shapley_sampling": 7.730369779000938,
+      "lime": 69.48337844999884
+    }
+  }
+}

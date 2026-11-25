@@ -1,0 +1,33 @@
+{
+  "seeds": [
+    42,
+    2026,
+    5175
+  ],
+  "n_folds": 5,
+  "drop_features": [
+    "fnlwgt",
+    "education"
+  ],
+  "n_jobs": -1,
+  "model": {
+    "type": "logistic",
+    "fixed": {
+      "penalty": "l1",
+      "solver": "saga",
+      "max_iter": 5000,
+      "tol": 0.0001
+    },
+    "grid": {
+      "C": {
+        "logspace": [
+          -3,
+          2,
+          12
+        ]
+      }
+    }
+  },
+  "_config_path": "configs/tuning_logistic_l1.json",
+  "_name": "tuning_logistic_l1"
+}

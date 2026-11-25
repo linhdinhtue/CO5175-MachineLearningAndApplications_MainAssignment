@@ -1,0 +1,9 @@
+{
+  "seeds": [42, 2026, 5175],
+  "drop_features": ["fnlwgt", "education"],
+  "variants": {
+    "l1": {"penalty": "l1", "C": 1.0, "solver": "saga", "max_iter": 5000, "tol": 1e-4},
+    "l2": {"penalty": "l2", "C": 1.0, "solver": "saga", "max_iter": 5000, "tol": 1e-4},
+    "elasticnet": {"penalty": "elasticnet", "C": 1.0, "l1_ratio": 0.5, "solver": "saga", "max_iter": 5000, "tol": 1e-4}
+  }
+}
