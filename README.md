@@ -1,7 +1,24 @@
-# Proposal: Interpretable Regression & Explainability
+# Interpretable Regression & Explainability
 
-**Học phần:** Machine Learning and Applications · **Chủ đề:** Topic 1  
-**Trạng thái:** Proposal dự kiến, chưa có kết quả thực nghiệm. Hoàn thiện và nộp proposal tại điểm kiểm tra bắt buộc trước khi thực nghiệm theo mục 4 của `00_ML-Assignment-Topics.pdf`.  
+Code thực nghiệm và kết quả của Thủy đã được merge về dự án. Repository hiện phục vụ ba việc: **đọc hiểu phương pháp, chạy tái hiện độc lập và viết báo cáo theo mục 4 của đề**. Phần proposal lịch sử được giữ bên dưới; trạng thái triển khai không còn là “chưa có kết quả”.
+
+| Bắt đầu ở đâu? | Tài liệu / lệnh |
+| --- | --- |
+| Học code theo luồng dữ liệu và mục 4 | [Learning guide](docs/learning_guide.md) |
+| Cấu trúc subfolder và thay đổi đường dẫn | [Reorganisation](docs/reorganisation.md) |
+| Phân tích chi tiết của nhóm | [Analysis and discussion](docs/analysis_and_discussion.md) |
+| Bản thảo report theo cấu trúc đề | [Report](reports/report.md) |
+| Bảng số liệu có kiểm tra dự đoán | [Evidence](reports/evidence.md), sinh bằng `python -m reports.build_evidence` |
+| Kiểm tra code nhanh | `python -m unittest discover -s tests -v` |
+| Lập kế hoạch chạy lại | `python -m experiments.run_suite --suite baseline --run-id my-baseline-01` |
+| Chạy kế hoạch | Thêm `--execute`; kết quả vào `results/reproductions/<run-id>/` |
+
+Giữ nguyên artifact của nhóm trong `results/*-<run-number>/`. Chạy lại với ID mới, so config/checksum/metric trước khi đưa số liệu mới vào báo cáo. Các config `explain`, `stability`, `analysis` dùng hyperparameter cố định từ lần chạy cũ; xem hướng dẫn khi tuning lại chọn cấu hình khác. `configs/suites.json` chứa ba bộ `baseline`, `core`, `full`; `configs/ci_runs.json` đang rỗng nên CI push hiện không chạy thí nghiệm nào.
+
+## Proposal và protocol của nhóm
+
+**Học phần:** Machine Learning and Applications · **Chủ đề:** Topic 1
+**Trạng thái:** Nội dung proposal/protocol được lưu để đối chiếu với code. Đã có artifact thực nghiệm; việc proposal đã được nộp/duyệt cần nhóm xác nhận riêng, không suy ra từ trạng thái code.
 **Thành viên / MSSV / trưởng nhóm:**
 
 | Mã số ID | Họ |Tên | Email | Thành viên |
@@ -79,28 +96,40 @@ Python 3.10+, scikit-learn, SHAP; giữ dependencies trong `requirements.txt`, c
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-**Chạy một thí nghiệm:** `python -m experiments.<task> --config configs/<tên>.json`. Kết quả ghi vào `results/<tên config>/` (kèm `config.json` và `env.json` gồm phiên bản thư viện, CPU, RAM).
+Trên Windows PowerShell, dùng Python 3.10 để tạo môi trường cục bộ:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Nếu đã có môi trường Conda của dự án, chạy `conda activate ml_assignment`. Môi trường `.venv` chứa đường dẫn tuyệt đối đến Python trên máy tạo nó. Khi chuyển máy, tạo môi trường trong thư mục mới (ví dụ .venv-local nếu .venv đã tồn tại) và cài gói từ `requirements.txt`. Có thể kiểm tra Python đang dùng bằng `python -c "import sys; print(sys.executable)"`.
+
+**Chạy một thí nghiệm:** `python -m experiments.<nhóm>.<task> --config configs/<nhóm>/<tên>.json`. Kết quả vẫn ghi vào `results/<tên config>/`, không thêm cấp thư mục nhóm (kèm `config.json` và `env.json` gồm phiên bản thư viện, CPU, RAM). Ví dụ `configs/modeling/baseline.json` vẫn tạo thư mục `baseline/`. Các lệnh dưới đây thay cho entry point phẳng trước khi reorganise.
 
 | Bước | Lệnh | Nội dung |
 | --- | --- | --- |
-| Dữ liệu | `python -m experiments.data_check --config configs/data_check.json` | Checksum, số dòng, nhãn, missing |
-| Baseline | `python -m experiments.baseline --config configs/baseline.json` | Logistic L2 `C=1`, 5-fold × 3 seed |
-| Tuning | `python -m experiments.tuning --config configs/tuning_logistic_l1.json` (tương tự `_l2`, `_elasticnet`, `tuning_gbdt`, `tuning_gbdt_extended`, `tuning_ebm_gam`, `tuning_ebm_ga2m`) | GridSearchCV theo ROC-AUC, refit, test |
-| Ablation | `python -m experiments.ablation --config configs/ablation.json` | L1/L2/EN tại `C=1` |
-| SHAP | `python -m experiments.explain --config configs/explain.json` | TreeExplainer/LinearExplainer, kiểm tra tính cộng, hình |
-| Tái hiện paper | `python -m experiments.reproduce_shap --config configs/reproduce_shap_v2.json` | Figure 3 và Figure 4 của Lundberg & Lee (2017) |
-| Ổn định giải thích | `python -m experiments.stability --config configs/stability.json` | Bootstrap 30 lần trên train |
-| Phân tích bổ sung | `python -m experiments.analysis --config configs/analysis.json` | KTC bootstrap test, fairness, dependence plot |
+| Dữ liệu | `python -m experiments.data.check --config configs/data/data_check.json` | Checksum, số dòng, nhãn, missing |
+| Baseline | `python -m experiments.modeling.baseline --config configs/modeling/baseline.json` | Logistic L2 `C=1`, 5-fold × 3 seed |
+| Tuning | `python -m experiments.modeling.tuning --config configs/modeling/tuning_logistic_l1.json` (tương tự `_l2`, `_elasticnet`, `tuning_gbdt`, `tuning_gbdt_extended`, `tuning_ebm_gam`, `tuning_ebm_ga2m`) | GridSearchCV theo ROC-AUC, refit, test |
+| Ablation | `python -m experiments.modeling.ablation --config configs/modeling/ablation.json` | L1/L2/EN tại `C=1` |
+| SHAP | `python -m experiments.explainability.explain --config configs/explainability/explain.json` | TreeExplainer/LinearExplainer, kiểm tra tính cộng, hình |
+| Tái hiện paper | `python -m experiments.reproduction.reproduce_shap --config configs/reproduction/reproduce_shap_v2.json` | Figure 3 và Figure 4 của Lundberg & Lee (2017) |
+| Ổn định giải thích | `python -m experiments.explainability.stability --config configs/explainability/stability.json` | Bootstrap 30 lần trên train |
+| Phân tích bổ sung | `python -m experiments.analysis.supplementary --config configs/analysis/analysis.json` | KTC bootstrap test, fairness, dependence plot |
 
-**Chạy trên GitHub Actions** (cách nhóm đã dùng, runner Ubuntu 4 CPU): workflow `.github/workflows/run-experiment.yml` tự chạy khi push lên nhánh `Thuy-branch`; danh sách thí nghiệm chạy song song lấy từ `configs/ci_runs.json`; mỗi thí nghiệm tạo một artifact `<tên config>-<số lần chạy>`. Tổng thời gian toàn bộ thí nghiệm trên runner 4 CPU khoảng 2–3 giờ (lâu nhất: tuning EBM và Logistic).
+**Chạy trên GitHub Actions** (cách nhóm đã dùng, runner Ubuntu 4 CPU): workflow `.github/workflows/run-experiment.yml` có trigger trên nhánh `Thuy-branch`, nhưng `configs/ci_runs.json` hiện có `runs: []`, nên không có job thí nghiệm khi push. Muốn chạy cần điền danh sách task/config hoặc dùng workflow_dispatch khi workflow khả dụng trên nhánh mặc định. Không tự sửa danh sách CI chỉ để chạy cục bộ. Bộ chạy cục bộ mới dùng `configs/suites.json`. Toàn bộ thí nghiệm có thể mất vài giờ tùy máy.
 
-**Nguồn mã:** toàn bộ mã trong `src/` và `experiments/` do nhóm tự viết; chỉ gọi API của thư viện `scikit-learn`, `shap`, `lime`, `interpret-core`. Shapley chính xác và Shapley sampling trong `experiments/reproduce_shap.py` do nhóm tự cài đặt theo công thức của paper.
+Workflow dùng task có dấu chấm, ví dụ `modeling.baseline`, và đường dẫn config đầy đủ. Nếu bỏ trống config, `src/common/config.py` cung cấp mặc định; riêng `modeling.tuning` phải chỉ rõ config mô hình. Workflow manual `active_workflows.yaml` checkout ref được chọn khi dispatch để chạy đúng cấu trúc của ref đó. Manifest CI giữ nguyên danh sách rỗng. Ví dụ một phần tử khi nhóm muốn bật CI: `{"task": "modeling.tuning", "config": "configs/modeling/tuning_logistic_l2.json"}`.
 
-Sản phẩm cuối theo mục 5 của đề: báo cáo PDF khoảng 8–12 trang chưa kể phụ lục, slide hoặc video, mã nguồn và README. **Khai báo AI:** OpenAI Codex hỗ trợ soạn proposal và khung phân tích; GitHub Copilot hỗ trợ viết mã thực nghiệm, workflow GitHub Actions và tổng hợp số liệu vào `docs/`. Nhóm phải kiểm tra tài liệu, xác thực kết quả, hiểu công thức/code và cập nhật khai báo theo sử dụng thực tế.
+**Nguồn mã:** toàn bộ mã trong `src/` và `experiments/` do nhóm tự viết; chỉ gọi API của thư viện `scikit-learn`, `shap`, `lime`, `interpret-core`. Shapley chính xác và Shapley sampling trong `experiments/reproduction/reproduce_shap.py` do nhóm tự cài đặt theo công thức của paper.
+
+Sản phẩm cuối theo mục 5 của đề: báo cáo PDF khoảng 8–12 trang chưa kể phụ lục, slide hoặc video, mã nguồn và README. **Khai báo AI:** OpenAI Codex hỗ trợ soạn proposal, khung phân tích, refactor phần dùng chung/diagnostics, runner tái hiện, kiểm tra và bản thảo report; Claude Code hỗ trợ viết mã thực nghiệm ban đầu. GitHub Copilot hỗ trợ workflow GitHub Actions và tổng hợp số liệu vào `docs/`. Nhóm phải kiểm tra tài liệu, xác thực kết quả, hiểu công thức/code và cập nhật khai báo theo sử dụng thực tế.
 
 ## Tài liệu
 

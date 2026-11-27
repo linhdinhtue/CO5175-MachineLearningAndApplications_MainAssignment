@@ -1,19 +1,19 @@
 
-name: Run experiment from Thuy-branch
+name: Run selected experiment
 
 on:
   workflow_dispatch:
     inputs:
       task:
-        description: "Module trong experiments/"
+        description: "Module trong experiments/ theo cấu trúc subfolder"
         required: true
-        default: data_check
+        default: data.check
         type: choice
         options:
-          - data_check
-          - baseline
+          - data.check
+          - modeling.baseline
       config:
-        description: "Đường dẫn config (để trống = configs/<task>.json)"
+        description: "Config đầy đủ; bỏ trống dùng mặc định của task"
         required: false
         default: ""
 
@@ -26,10 +26,8 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      - name: Checkout Thuy-branch
+      - name: Checkout selected workflow ref
         uses: actions/checkout@v4
-        with:
-          ref: Thuy-branch
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -52,14 +50,15 @@ jobs:
           CONFIG: ${{ inputs.config }}
         run: |
           if [ -z "$CONFIG" ]; then
-            CONFIG="configs/${TASK}.json"
+            CONFIG=$(python -m src.common.config "$TASK")
           fi
+          echo "RESULT_NAME=$(basename "$CONFIG" .json)" >> "$GITHUB_ENV"
           python -m "experiments.${TASK}" --config "$CONFIG"
 
       - name: Upload results
-        if: always()
+        if: always() && env.RESULT_NAME != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.task }}-${{ github.run_number }}
-          path: results/${{ inputs.task }}/
+          name: ${{ env.RESULT_NAME }}-${{ github.run_number }}
+          path: results/${{ env.RESULT_NAME }}/
           if-no-files-found: warn

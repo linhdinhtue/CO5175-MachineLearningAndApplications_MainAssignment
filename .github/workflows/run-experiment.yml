@@ -15,11 +15,11 @@ name: Run experiment
   workflow_dispatch:
     inputs:
       task:
-        description: "Module trong experiments/ (vd: data_check, baseline, tuning, ablation)"
+        description: "Module trong experiments/ (vd: data.check, modeling.baseline, modeling.tuning)"
         required: true
-        default: baseline
+        default: modeling.baseline
       config:
-        description: "Đường dẫn config (để trống = configs/<task>.json)"
+        description: "Config đầy đủ; bỏ trống dùng mặc định của task, tuning phải chỉ rõ config"
         required: false
         default: ""
 
@@ -46,7 +46,7 @@ jobs:
         # push: runs listed in configs/ci_runs.json; manual run: the chosen task only
         run: |
           if [ "$EVENT" = "workflow_dispatch" ]; then
-            if [ -z "$CONFIG" ]; then CONFIG="configs/${TASK}.json"; fi
+            if [ -z "$CONFIG" ]; then CONFIG=$(python -m src.common.config "$TASK"); fi
             MATRIX=$(jq -cn --arg t "$TASK" --arg c "$CONFIG" '[{task:$t, config:$c}]')
           else
             MATRIX=$(jq -c '.runs' configs/ci_runs.json)
