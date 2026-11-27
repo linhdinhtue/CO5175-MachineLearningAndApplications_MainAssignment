@@ -66,16 +66,16 @@ Toàn bộ phần code thực nghiệm, kết quả và số liệu trong docs t
 ## Giai đoạn 2 — Tài liệu & baseline (tuần 2–3)
 
 ### 2.1 Dữ liệu
-- [x] `src/data.py`: tải Adult (`adult.data`, `adult.test`) từ UCI. — `data_check-1` **(Thủy)**
+- [x] `src/data/loader.py`: tải Adult (`adult.data`, `adult.test`) từ UCI. — `data_check-1` **(Thủy)**
 - [x] `data_meta.json`: URL nguồn, SHA-256, số dòng, tỷ lệ nhãn train/test. — `data_check-1` **(Thủy)**
 - [x] Chuẩn hóa nhãn (`>50K.` → `>50K`), `?` → missing, giữ bản ghi trùng (24 train / 5 test). — `data_check-1` **(Thủy)**
 - [ ] Notebook `notebooks/view_data.ipynb`: EDA cơ bản (phân bố nhãn, missing, biến số/phân loại, tương quan).
 
 ### 2.2 Pipeline & baseline
-- [x] `src/preprocess.py`: `ColumnTransformer` (median/mode impute, one-hot, `StandardScaler` cho Logistic); bỏ `fnlwgt`, `education`. **(Thủy)**
-- [x] Stratified 5-fold theo seed {42, 2026, 5175} (trong `experiments/baseline.py`, `experiments/tuning.py`). **(Thủy)**
-- [x] `src/metrics.py`: ROC-AUC, AP, F1, balanced accuracy, accuracy, log-loss (ngưỡng 0.5). **(Thủy)**
-- [x] `configs/baseline.json` + `experiments/baseline.py`: Logistic L2 `C=1`, 3 seed — test ROC-AUC 0.9033. — `baseline-1` **(Thủy)**
+- [x] `src/data/preprocessing.py`: `ColumnTransformer` (median/mode impute, one-hot, `StandardScaler` cho Logistic); bỏ `fnlwgt`, `education`. **(Thủy)**
+- [x] Stratified 5-fold theo seed {42, 2026, 5175} (trong `experiments/modeling/baseline.py`, `experiments/modeling/tuning.py`). **(Thủy)**
+- [x] `src/evaluation/metrics.py`: ROC-AUC, AP, F1, balanced accuracy, accuracy, log-loss (ngưỡng 0.5). **(Thủy)**
+- [x] `configs/modeling/baseline.json` + `experiments/modeling/baseline.py`: Logistic L2 `C=1`, 3 seed — test ROC-AUC 0.9033. — `baseline-1` **(Thủy)**
 - [x] Ghi metadata máy (CPU, RAM, OS, phiên bản thư viện) vào `env.json` của mỗi artifact. **(Thủy)**
 
 ### 2.3 Lý thuyết
@@ -86,26 +86,26 @@ Toàn bộ phần code thực nghiệm, kết quả và số liệu trong docs t
 ## Giai đoạn 3 — Tái hiện & thực nghiệm (tuần 4–6)
 
 ### 3.1 Tuning mô hình chính
-- [x] `configs/tuning_*.json` cho L1, L2, Elastic Net, GBDT (12 cấu hình mỗi biến thể). — `tuning_*-3` **(Thủy)**
-- [x] `experiments/tuning.py`: `GridSearchCV` theo ROC-AUC, refit toàn train, đánh giá test; lưu `cv_results_`, tham số tốt nhất, dự đoán test, thời gian tuning/refit/inference. — `tuning_*-3` **(Thủy)**
+- [x] `configs/modeling/tuning_*.json` cho L1, L2, Elastic Net, GBDT (12 cấu hình mỗi biến thể). — `tuning_*-3` **(Thủy)**
+- [x] `experiments/modeling/tuning.py`: `GridSearchCV` theo ROC-AUC, refit toàn train, đánh giá test; lưu `cv_results_`, tham số tốt nhất, dự đoán test, thời gian tuning/refit/inference. — `tuning_*-3` **(Thủy)**
 - [x] Ghi lại convergence warning và cấu hình lỗi (không loại âm thầm). **(Thủy)**
 - [x] Đếm kích thước mô hình: hệ số + intercept (Logistic); số cây/nút/lá (GBDT); dung lượng model. **(Thủy)**
 - [x] Chênh lệch theo cặp kèm KTC bootstrap 95% trên test: GBDT − Elastic Net ROC-AUC +0.0236 [0.0212, 0.0261]; GBDT − EBM chứa 0. — `analysis-7` **(Thủy)**
 - [x] Phân tích độ nhạy GBDT với lưới mở rộng — chỉ +0.0003 ROC-AUC, khoảng cách GBDT–Logistic không bị ước lượng thấp. — `tuning_gbdt_extended-4` **(Thủy)**
 
 ### 3.2 Ablation (bắt buộc)
-- [x] `configs/ablation.json` + `experiments/ablation.py`: L1/L2/EN tại `C=1`, `l1_ratio=0.5`; đo hiệu năng, số hệ số |β|>1e-6, refit time. — `ablation-3` **(Thủy)**
+- [x] `configs/modeling/ablation.json` + `experiments/modeling/ablation.py`: L1/L2/EN tại `C=1`, `l1_ratio=0.5`; đo hiệu năng, số hệ số |β|>1e-6, refit time. — `ablation-3` **(Thủy)**
 
 ### 3.3 Giải thích
 - [x] Bảng hệ số, odds ratio, nhóm tham chiếu (`features_seed*.csv`, `reference_categories.json`); tỷ lệ chọn và cùng dấu qua seed (mục 4.1 docs). — `tuning_*-3` **(Thủy)**
-- [x] `experiments/explain.py`: TreeExplainer (GBDT) + LinearExplainer (Elastic Net), 100 background, 500 mẫu test cố định (lưu ID); beeswarm, bar, waterfall. — `explain-4` **(Thủy)**
+- [x] `experiments/explainability/explain.py`: TreeExplainer (GBDT) + LinearExplainer (Elastic Net), 100 background, 500 mẫu test cố định (lưu ID); beeswarm, bar, waterfall. — `explain-4` **(Thủy)**
 - [x] Kiểm tra local accuracy: sai số max 5.1e-8 (GBDT), 7.1e-15 (Logistic). — `explain-4` **(Thủy)**
 - [x] Gộp SHAP theo biến gốc, lưu cả bản chưa gộp. — `explain-4` **(Thủy)**
 - [x] Chọn TP/TN/FP/FN (ID nhỏ nhất, seed 42) và 4 mẫu Logistic/GBDT bất đồng. — `explain-4` **(Thủy)**
 - [x] Dependence plot 4 biến số: xác nhận `age` chữ U ngược, `capital-gain` dạng ngưỡng, `hours-per-week` bão hòa; `education-num` gần tuyến tính (mục 7.2 docs). — `analysis-7` **(Thủy)**
 
 ### 3.4 Tái hiện paper
-- [x] `experiments/reproduce_shap.py`: Shapley chính xác bằng liệt kê tập con; khớp KernelExplainer (Figure 4, sai số ~1e-16) và TreeExplainer (sai số ≤ 5.5e-8). — `reproduce_shap-5` **(Thủy)**
+- [x] `experiments/reproduction/reproduce_shap.py`: Shapley chính xác bằng liệt kê tập con; khớp KernelExplainer (Figure 4, sai số ~1e-16) và TreeExplainer (sai số ≤ 5.5e-8). — `reproduce_shap-5` **(Thủy)**
 - [x] Figure 4: Kernel SHAP = Shapley chính xác = số của paper (1, 1, 0) và (3, 2, 0); LIME khác SHAP như paper nhưng khác cả số LIME của paper. — `reproduce_shap-5` **(Thủy)**
 - [x] Figure 3: Kernel SHAP hẹp hơn Shapley sampling ở mọi cỡ mẫu, LIME lệch; hình sparse gần trùng paper khi chia ngân sách sampling cho M đặc trưng. Còn 1 chênh lệch có giả thuyết: Kernel SHAP lệch thấp ~0.02 ở cây sparse. — `reproduce_shap-5`, `reproduce_shap_v2-6` **(Thủy)**
 - [x] Điền bảng mục 6 trong docs (locator, số đọc từ hình, kết quả lần 1 và lần 2, chênh lệch). **(Thủy)**

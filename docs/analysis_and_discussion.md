@@ -208,7 +208,7 @@ Ghi số hệ số + intercept của Logistic; số cây/nút/lá và giá trị
 | Kết quả tái hiện, chênh lệch | Xem bên dưới (artifact `reproduce_shap-5`) |
 | Thực nghiệm GBDT trên Adult | Ứng dụng phương pháp; không gọi là tái hiện benchmark gốc |
 
-### 6.1. Kết quả tái hiện lần 1 (artifact `reproduce_shap-5`, config `configs/reproduce_shap.json`)
+### 6.1. Kết quả tái hiện lần 1 (artifact `reproduce_shap-5`, config `configs/reproduction/reproduce_shap.json`)
 
 **Figure 4 — ví dụ đồ chơi (tham chiếu: đặc trưng vắng mặt = 0):**
 
@@ -238,7 +238,7 @@ Ghi số hệ số + intercept của Logistic; số cây/nút/lá và giá trị
 - **Chênh lệch 3 — cây sparse dùng 4 thay vì 3 đặc trưng** (thêm đặc trưng 61 do một split nhiễu). Không đổi giá trị thật của đặc trưng 0 (= 1/3) nhưng khác thiết lập paper; lần 2 thêm `min_impurity_decrease=0.001`.
 - **Chi phí:** Kernel SHAP chậm nhất ở mô hình 100 đặc trưng (200 s cho 1 800 lần ước lượng, so với 70 s của LIME và 8 s của sampling).
 
-### 6.2. Kết quả tái hiện lần 2 (artifact `reproduce_shap_v2-6`, config `configs/reproduce_shap_v2.json`)
+### 6.2. Kết quả tái hiện lần 2 (artifact `reproduce_shap_v2-6`, config `configs/reproduction/reproduce_shap_v2.json`)
 
 Thay đổi so với lần 1: (i) Shapley sampling chia ngân sách cho M đặc trưng như paper (giữ cả cách tính cũ làm đối chứng); (ii) thêm Kernel SHAP chọn 10 biến; (iii) cây sparse thêm `min_impurity_decrease=0.001` → giờ dùng đúng 3/100 đặc trưng (độ sâu 3, 4 lá), giá trị thật của đặc trưng 0 là 0.332. Hình: `plots/figure3.png`.
 
@@ -264,7 +264,7 @@ Với bài toán nhỏ, có thể tính tổng Shapley bằng liệt kê tập c
 
 ### 7.1. Bonus — EBM: mô hình dễ diễn giải nhưng phi tuyến (artifact `tuning_ebm_gam-7`, `tuning_ebm_ga2m-7`)
 
-Explainable Boosting Machine (`interpret-core` 0.7.8, tham số mặc định, `n_jobs=1`), cùng 3 seed và cùng fold CV với các mô hình khác. **Không tuning** (1 cấu hình mỗi biến thể) → ngân sách tuning thấp hơn Logistic/GBDT (12 cấu hình); kết quả của EBM vì vậy là cận dưới. GAM = chỉ hàm một biến; GA2M = thêm 10 tương tác cặp.
+Explainable Boosting Machine (`interpret-core` 0.7.8, tham số mặc định, `n_jobs=1`), cùng 3 seed và cùng fold CV với các mô hình khác. **Không tuning** (1 cấu hình mỗi biến thể) → ngân sách tuning thấp hơn Logistic/GBDT (12 cấu hình); trình bày EBM như phân tích bổ sung, không coi điểm test này là cận dưới bảo đảm. GAM = chỉ hàm một biến; GA2M = thêm 10 tương tác cặp.
 
 | Mô hình | ROC-AUC | AP | F1 | Balanced acc. | Accuracy | Log-loss | Kích thước | Refit |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -283,8 +283,8 @@ Bootstrap 1 000 lần trên test (mô hình seed 42, artifact `analysis-7`, kho�
 
 Kết luận bonus:
 
-- **Trên Adult, đánh đổi hiệu năng–diễn giải gần như biến mất khi dùng EBM.** Ngay cả GAM thuần cộng tính (12 đồ thị một biến, đọc được hoàn toàn) cũng chỉ kém GBDT 0.0003 ROC-AUC và tốt hơn về log-loss; GA2M ngang GBDT (khoảng tin cậy của chênh lệch chứa 0 với ROC-AUC và AP).
-- **Khoảng cách Logistic → GBDT đến từ phi tuyến một biến, không phải tương tác:** GAM đã thu hẹp ~99% khoảng cách ROC-AUC (0.9033 → 0.9267 so với GBDT 0.9270); thêm 10 tương tác chỉ cộng thêm 0.0005. Tương tác quan trọng nhất là `age × hours-per-week`.
+- **Trên Adult, EBM thu hẹp khoảng cách hiệu năng với GBDT trong thiết lập đã đo.** GAM chỉ kém khoảng 0.0003 ROC-AUC và có log-loss thấp hơn. GA2M gần GBDT về số học; khoảng tin cậy chứa 0 không chứng minh tương đương, và chưa có đánh giá người dùng về khả năng hiểu.
+- **Phi tuyến một biến là một lời giải thích phù hợp với kết quả:** GAM thu hẹp phần lớn khoảng cách ROC-AUC (0.9033 → 0.9267 so với GBDT 0.9270); thêm 10 tương tác chỉ cộng khoảng 0.0005 trong thiết lập này. Chưa đủ bằng chứng loại trừ vai trò của tương tác hoặc quy toàn bộ chênh lệch cho một nguyên nhân. Tương tác đứng đầu theo term importance của EBM là `age × hours-per-week`.
 - Chi phí: EBM huấn luyện chậm hơn GBDT ~12 lần (122–135 s so với 10 s); GA2M lớn gấp đôi GBDT trên đĩa.
 - Hạn chế: EBM không tuning; xếp hạng term importance của EBM (marital-status, age, capital-gain, education-num, …) gần trùng xếp hạng SHAP của GBDT, nhưng đó là hai định nghĩa độ quan trọng khác nhau.
 
@@ -337,6 +337,6 @@ Bootstrap 30 lần trên train, giữ cố định siêu tham số (GBDT 200/0.1
 
 ## 8. Bằng chứng cần bàn giao và khai báo AI
 
-Các đầu ra dự kiến trong `results/` gồm metric theo seed, dự đoán test, CV results, config, metadata máy, bảng hệ số, SHAP values/ID/background, ablation và figures. Đây là danh sách cần tạo, chưa phải tệp đã tồn tại. Mọi số liệu trong báo cáo phải truy được tới đầu ra tương ứng.
+Các artifact trong `results/*-<run-number>/` đã có metric theo seed, dự đoán test, CV results, config, metadata máy, bảng hệ số, SHAP values/ID/background, ablation và figures. Chạy `python -m reports.build_evidence` để kiểm tra metric từ dự đoán và sinh bảng kèm hash. Kết quả tái hiện sau refactor lưu riêng ở `results/reproductions/`; xem `docs/refactor_validation.md`. Không gọi artifact kế thừa là kết quả tự chạy mới.
 
 OpenAI Codex hỗ trợ soạn tài liệu phân tích và thiết kế thảo luận này. Nhóm chịu trách nhiệm đọc paper, kiểm chứng phép đo, hiểu công thức/mã nguồn và ghi đúng đóng góp thực tế, theo mục 4.4 của đề.
