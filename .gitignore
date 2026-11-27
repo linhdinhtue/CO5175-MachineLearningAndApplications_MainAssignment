@@ -1,6 +1,10 @@
 #
 note.txt
 
+# Local downloads and independent reruns; historical tracked artifacts stay tracked.
+/data/raw/
+/results/reproductions/
+
 # Mac OS-specific storage files
 .DS_Store
 
