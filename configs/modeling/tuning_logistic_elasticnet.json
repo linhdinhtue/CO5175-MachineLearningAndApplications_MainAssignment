@@ -1,0 +1,11 @@
+{
+  "seeds": [42, 2026, 5175],
+  "n_folds": 5,
+  "drop_features": ["fnlwgt", "education"],
+  "n_jobs": -1,
+  "model": {
+    "type": "logistic",
+    "fixed": {"penalty": "elasticnet", "solver": "saga", "max_iter": 5000, "tol": 1e-4},
+    "grid": {"C": [0.01, 0.1, 1, 10], "l1_ratio": [0.2, 0.5, 0.8]}
+  }
+}

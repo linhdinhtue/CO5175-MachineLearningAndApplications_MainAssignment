@@ -1,0 +1,19 @@
+{
+  "seed": 42,
+  "bootstrap_seed": 7,
+  "n_bootstrap": 30,
+  "top_k": 5,
+  "drop_features": ["fnlwgt", "education"],
+  "n_background": 100,
+  "n_explain": 500,
+  "models": {
+    "gbdt": {
+      "type": "gbdt",
+      "fixed": {"n_estimators": 200, "learning_rate": 0.1, "max_depth": 4}
+    },
+    "elasticnet": {
+      "type": "logistic",
+      "fixed": {"penalty": "elasticnet", "C": 1.0, "l1_ratio": 0.8, "solver": "saga", "max_iter": 5000, "tol": 1e-4}
+    }
+  }
+}
